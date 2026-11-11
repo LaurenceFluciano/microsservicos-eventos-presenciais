@@ -1,0 +1,78 @@
+# ==========================================
+# .NET / ASP.NET Core
+# ==========================================
+
+# Arquivos compilados
+**/bin/
+**/obj/
+
+# Configurações locais de projetos
+*.csproj.user
+*.vbproj.user
+*.suo
+*.user
+*.userosscache
+
+# ==========================================
+# Visual Studio
+# ==========================================
+
+.vs/
+**/.vs/
+
+# ==========================================
+# JetBrains Rider / IntelliJ
+# ==========================================
+
+.idea/
+**/.idea/
+*.sln.iml
+
+# ==========================================
+# VS Code
+# ==========================================
+
+.vscode/*
+!.vscode/extensions.json
+
+# ==========================================
+# Testes e cobertura
+# ==========================================
+
+TestResults/
+**/TestResults/
+coverage/
+**/coverage/
+*.coverage
+*.coveragexml
+
+# ==========================================
+# Logs e arquivos temporários
+# ==========================================
+
+*.log
+*.tmp
+*.temp
+*.bak
+*.swp
+*~
+
+# ==========================================
+# Ambiente e credenciais
+# ==========================================
+
+.env
+.env.*
+!.env.example
+
+# Configurações locais com segredos
+**/appsettings.Local.json
+**/appsettings.Production.local.json
+
+# ==========================================
+# Sistema operacional
+# ==========================================
+
+.DS_Store
+Thumbs.db
+desktop.ini

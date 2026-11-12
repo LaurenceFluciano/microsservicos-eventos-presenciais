@@ -1,5 +1,5 @@
-using AppTemplate;
-using AppTemplate.Infra;
+using Evento;
+using Evento.Infra;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;

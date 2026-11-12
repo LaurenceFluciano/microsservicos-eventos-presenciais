@@ -1,4 +1,4 @@
-﻿namespace AppTemplate.Infra
+﻿namespace Evento.Infra
 {
     public static class GeradorDeServicos
     {

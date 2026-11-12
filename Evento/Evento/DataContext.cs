@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 
-namespace AppTemplate
+namespace Evento
 {
     public class DataContext : DbContext
     {
@@ -9,12 +9,12 @@ namespace AppTemplate
 
         }
 
-        //public DbSet<Exemplo> Exemplos { get; set; }
+        public DbSet<Evento> Eventos { get; set; }
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            //modelBuilder.Entity<Exemplo>().HasKey(p => p.Id);
+            modelBuilder.Entity<Evento>().HasKey(p => p.Id);
 
 
             base.OnModelCreating(modelBuilder);

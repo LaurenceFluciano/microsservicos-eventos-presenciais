@@ -1,4 +1,4 @@
-﻿namespace AppTemplate.DTO
+﻿namespace Comercializacao.DTO
 {
     public class ExemploDTO
     {

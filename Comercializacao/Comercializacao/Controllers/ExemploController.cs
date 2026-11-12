@@ -1,7 +1,7 @@
-﻿using AppTemplate.Servicos;
+﻿using Comercializacao.Servicos;
 using Microsoft.AspNetCore.Mvc;
 
-namespace AppTemplate.Controllers
+namespace Comercializacao.Controllers
 {
     [ApiController]
     [Route("[controller]")]

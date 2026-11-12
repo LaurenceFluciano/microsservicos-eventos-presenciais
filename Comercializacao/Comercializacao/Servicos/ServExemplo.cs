@@ -1,7 +1,7 @@
-﻿using AppTemplate.DTO;
-using AppTemplate.Infra;
+﻿using Comercializacao.DTO;
+using Comercializacao.Infra;
 
-namespace AppTemplate.Servicos
+namespace Comercializacao.Servicos
 {
     public class ServExemplo
     {

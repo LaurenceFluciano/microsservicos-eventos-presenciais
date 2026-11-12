@@ -1,4 +1,4 @@
-﻿namespace AppTemplate.Infra
+﻿namespace Comercializacao.Infra
 {
     public static class GeradorDeServicos
     {

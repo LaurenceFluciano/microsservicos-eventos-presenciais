@@ -1,7 +1,7 @@
-﻿using AppTemplate.Servicos;
+﻿using Evento.Servicos;
 using Microsoft.AspNetCore.Mvc;
 
-namespace AppTemplate.Controllers
+namespace Evento.Controllers
 {
     [ApiController]
     [Route("[controller]")]

@@ -1,4 +1,4 @@
-﻿namespace AppTemplate.DTO
+﻿namespace Evento.DTO
 {
     public class ExemploDTO
     {

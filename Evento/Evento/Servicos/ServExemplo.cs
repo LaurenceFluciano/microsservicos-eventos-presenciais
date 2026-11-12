@@ -1,7 +1,7 @@
 ﻿using AppTemplate.DTO;
 using AppTemplate.Infra;
 
-namespace AppTemplate.Servicos
+namespace Evento.Servicos
 {
     public class ServExemplo
     {

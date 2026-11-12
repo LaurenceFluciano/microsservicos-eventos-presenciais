@@ -3,21 +3,23 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Usuario.Models
 {
-    [Table("Usuarios")]
+    [Table("usuarios")]
     public class UsuarioModel 
     {
-        [Key]
-        public int Id { get; set; }
 
-        [Required]
-        [MaxLength(100)]
+        public Guid Id { get; set; } = Guid.CreateVersion7()
+
+       
         public string Nome { get; set; } = string.Empty;
 
-        [Required]
-        [MaxLength(150)]
+
         public string Email { get; set; } = string.Empty;
 
-        [MaxLength(20)]
+
         public string? Telefone { get; set; }
+        
+        public DateTime CriadoEm { get; set; } = DateTime.UtcNow;
+
+        public ContaModel? Conta { get; set; }
     }
 }

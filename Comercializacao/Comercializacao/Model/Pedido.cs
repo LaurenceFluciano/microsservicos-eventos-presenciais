@@ -25,8 +25,8 @@ public class Pedido
 
     public DateTimeOffset? ExpiraEm { get; set; }
 
-    /*public ICollection<Pagamento> Pagamentos { get; set; }
-        = new List<Pagamento>();*/
+    public ICollection<Pagamento> Pagamentos { get; set; }
+        = new List<Pagamento>();
 
     public ICollection<Ingresso> Ingressos { get; set; }
         = new List<Ingresso>();

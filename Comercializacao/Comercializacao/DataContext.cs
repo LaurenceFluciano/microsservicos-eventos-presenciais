@@ -14,6 +14,7 @@ public class DataContext : DbContext
     public DbSet<Ingresso> Ingressos => Set<Ingresso>();
     public DbSet<OfertaIngresso> OfertasIngresso => Set<OfertaIngresso>();
     public DbSet<Pedido> Pedidos => Set<Pedido>();
+    public DbSet<Pagamento> Pagamentos => Set<Pagamento>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -142,6 +143,36 @@ public class DataContext : DbContext
 
             entity.HasIndex(p => p.CompradorId);
             entity.HasIndex(p => p.Status);
+        });
+
+        // ========================================
+        // PAGAMENTO
+        // ========================================
+
+        modelBuilder.Entity<Pagamento>(entity =>
+        {
+            entity.ToTable("pagamentos");
+
+            entity.HasKey(p => p.Id);
+
+            entity.Property(p => p.Valor)
+                .HasPrecision(12, 2)
+                .IsRequired();
+
+            entity.Property(p => p.Status)
+                .HasConversion<string>()
+                .HasMaxLength(30)
+                .IsRequired();
+
+            entity.Property(p => p.CriadoEm)
+                .IsRequired();
+
+            entity.HasOne(p => p.Pedido)
+                .WithMany(pedido => pedido.Pagamentos)
+                .HasForeignKey(p => p.PedidoId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(p => p.PedidoId);
         });
     }
 }

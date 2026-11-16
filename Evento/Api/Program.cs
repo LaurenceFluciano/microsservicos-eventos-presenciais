@@ -1,15 +1,50 @@
-using Evento;
-using Evento.Infra;
+using Api;
+using Api.Application.Ports;
+using Api.Application.Services;
+using Api.Infrastructure;
+using Api.Infrastructure.Authentication;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
+using System.Text.Json.Serialization;
+
+
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<IUsuarioAtual, UsuarioAtualHttp>();
+builder.Services.AddScoped<EventoService>();
 
+
+if (builder.Environment.IsDevelopment())
+{
+
+    builder.Services
+        .AddAuthentication("Fake")
+        .AddScheme<
+            AuthenticationSchemeOptions,
+            FakeAuthenticationHandler
+        >("Fake", options => { });
+    
+    
+}
+else
+{
+    throw new Exception("O serviço de eventos não foi configurado para produção.");
+}
+
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(
+            new JsonStringEnumConverter()
+        );
+    });
+
+builder.Services.AddAuthorization();
 builder.Services.AddControllers();
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
 var allowedOrigins = builder.Configuration
@@ -60,6 +95,7 @@ app.UseCors();
 
 app.UseHttpsRedirection();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();

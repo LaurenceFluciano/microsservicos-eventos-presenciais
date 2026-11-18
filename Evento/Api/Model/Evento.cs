@@ -145,6 +145,37 @@ public class Evento
             ? Slug
             : $"{Slug}-{SlugNumero}";
 
+    // Atualiza somente os campos informados no PATCH.
+    // O período é validado com os valores finais (novos + existentes).
+    public void AtualizarInformacoes(
+        string? nome,
+        string? descricao,
+        string? local,
+        DateTime? inicio,
+        DateTime? fim)
+    {
+        // Validar antes de modificar as propriedades da entidade.
+        if (nome is not null)
+        {
+            if (string.IsNullOrWhiteSpace(nome))
+                throw new DomainException("O nome do evento é obrigatório.");
+
+            if (string.IsNullOrEmpty(GerarSlug(nome.Trim())))
+                throw new DomainException(
+                    "O nome do evento não permite gerar um slug válido."
+                );
+        }
+
+        Agendar(inicio ?? Inicio, fim ?? Fim);
+
+        if (nome is not null)
+            Nome = nome;
+        if (descricao is not null)
+            Descricao = descricao;
+        if (local is not null)
+            Local = local;
+    }
+
     public void DefinirNumeroSlug(int numero)
     {
         if (numero < 1)

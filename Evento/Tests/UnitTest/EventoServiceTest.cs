@@ -145,15 +145,45 @@ public class EventoServiceTest
                 Fim = inicio.AddHours(3)
             });
 
-            var publicado = await service.Publicar(criado.Id);
+            var publicado = await service.Publicar(
+                criado.Id,
+                publicBaseUrl: "https://eventos.exemplo.com:9443/portal/");
             Assert.Equal(EnumStatusPublicacaoEvento.PUBLICADO, publicado.StatusPublicacao);
             Assert.NotNull(publicado.PublicadoEm);
             Assert.Equal(
-                $"http://localhost:8080/api/eventos/publicado/{publicado.Slug}",
+                $"https://eventos.exemplo.com:9443/portal/api/eventos/publicado/{publicado.Slug}",
                 publicado.UrlEvento);
 
             var gravado = await context.Set<Evento>().SingleAsync(e => e.Id == criado.Id);
             Assert.NotNull(gravado.PublicadoEm);
+        }
+    }
+
+    [Fact(DisplayName = "Publicar: sem host informado deve devolver caminho relativo")]
+    public async Task Publicar_SemBaseUrl_DeveRetornarCaminhoRelativo()
+    {
+        var (context, conexao) = await GetContextoBanco();
+        using (context)
+        using (conexao)
+        {
+            var service = new EventoService(
+                context,
+                new FakeUsuarioAtual(),
+                new FakeComercializacaoClient());
+
+            var inicio = DateTime.UtcNow.AddDays(5);
+            var criado = await service.Cadastrar(new CriarEventoRequest
+            {
+                Nome = "Evento com endereco relativo",
+                Inicio = inicio,
+                Fim = inicio.AddHours(2)
+            });
+
+            var publicado = await service.Publicar(criado.Id);
+
+            Assert.Equal(
+                $"/api/eventos/publicado/{publicado.Slug}",
+                publicado.UrlEvento);
         }
     }
 

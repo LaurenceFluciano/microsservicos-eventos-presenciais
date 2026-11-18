@@ -17,10 +17,12 @@ public class EventosController : ControllerBase
 {
 
     public EventoService EventoService;
+    private readonly IConfiguration _configuracao;
 
-    public EventosController(EventoService eventoService)
+    public EventosController(EventoService eventoService, IConfiguration configuracao)
     {
         EventoService = eventoService;
+        _configuracao = configuracao;
     }
 
     [HttpPost]
@@ -68,7 +70,13 @@ public class EventosController : ControllerBase
     {
         try
         {
-            var resultado = await EventoService.Publicar(id);
+            // Configuravel por Eventos__PublicBaseUrl. Sem configuracao,
+            // utiliza o esquema, host, porta e PathBase da requisicao.
+            var baseUrl = _configuracao["Eventos:PublicBaseUrl"];
+            if (string.IsNullOrWhiteSpace(baseUrl))
+                baseUrl = $"{Request.Scheme}://{Request.Host}{Request.PathBase}";
+
+            var resultado = await EventoService.Publicar(id, publicBaseUrl: baseUrl);
             return Ok(resultado);
         }
         catch (KeyNotFoundException exception)

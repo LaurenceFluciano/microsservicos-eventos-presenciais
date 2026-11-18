@@ -97,7 +97,8 @@ public class EventoService
 
     public async Task<EventoResponse> Publicar(
         Guid id,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        string? publicBaseUrl = null)
     {
         var organizadorId = _usuarioAtual.GetId();
         var evento = await _dataContext.Set<Evento>()
@@ -112,7 +113,7 @@ public class EventoService
 
         // Publicacao repetida e idempotente: nao consulta Comercializacao novamente.
         if (evento.PublicadoEm.HasValue)
-            return EventoMapper.ToEventoResponse(evento);
+            return EventoMapper.ToEventoResponse(evento, publicBaseUrl);
 
         if (_comercializacaoClient is null)
             throw new InvalidOperationException(
@@ -136,6 +137,6 @@ public class EventoService
 
         evento.Publicar();
         await _dataContext.SaveChangesAsync(cancellationToken);
-        return EventoMapper.ToEventoResponse(evento);
+        return EventoMapper.ToEventoResponse(evento, publicBaseUrl);
     }
 }

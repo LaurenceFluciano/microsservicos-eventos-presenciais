@@ -5,6 +5,7 @@ using Api.Application.DTO;
 using Api.Application.Ports;
 using Api.Application.Services;
 using Api.Infrastructure.Authentication;
+using Api.Infrastructure.Integration;
 using Api.Model;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
@@ -124,6 +125,148 @@ public class EventoServiceTest
             2,
             await context.Set<Evento>().CountAsync()
         );
+    }
+
+    [Fact(DisplayName = "Publicar: evento com oferta valida deve publicar e retornar URL")]
+    public async Task Publicar_ComOfertaValida_DevePublicar()
+    {
+        var (context, conexao) = await GetContextoBanco();
+        using (context)
+        using (conexao)
+        {
+            var usuario = new FakeUsuarioAtual();
+            var fake = new FakeComercializacaoClient { PossuiOfertaValida = true };
+            var service = new EventoService(context, usuario, fake);
+            var inicio = DateTime.UtcNow.AddDays(5);
+            var criado = await service.Cadastrar(new CriarEventoRequest
+            {
+                Nome = "Festival de Cinema",
+                Inicio = inicio,
+                Fim = inicio.AddHours(3)
+            });
+
+            var publicado = await service.Publicar(criado.Id);
+            Assert.Equal(EnumStatusPublicacaoEvento.PUBLICADO, publicado.StatusPublicacao);
+            Assert.NotNull(publicado.PublicadoEm);
+            Assert.Equal(
+                $"http://localhost:8080/api/eventos/publicado/{publicado.Slug}",
+                publicado.UrlEvento);
+
+            var gravado = await context.Set<Evento>().SingleAsync(e => e.Id == criado.Id);
+            Assert.NotNull(gravado.PublicadoEm);
+        }
+    }
+
+    [Fact(DisplayName = "Publicar: evento sem oferta valida deve ser recusado")]
+    public async Task Publicar_SemOfertasValidas_DeveRecusar()
+    {
+        var (context, conexao) = await GetContextoBanco();
+        using (context)
+        using (conexao)
+        {
+            var fake = new FakeComercializacaoClient { PossuiOfertaValida = false };
+            var service = new EventoService(context, new FakeUsuarioAtual(), fake);
+            var inicio = DateTime.UtcNow.AddDays(5);
+            var criado = await service.Cadastrar(new CriarEventoRequest
+            {
+                Nome = "Evento sem Ofertas",
+                Inicio = inicio,
+                Fim = inicio.AddHours(2)
+            });
+
+            await Assert.ThrowsAsync<DomainException>(() => service.Publicar(criado.Id));
+            Assert.Null((await context.Set<Evento>().SingleAsync(e => e.Id == criado.Id)).PublicadoEm);
+        }
+    }
+
+    [Fact(DisplayName = "Publicar: outro organizador nao pode publicar")]
+    public async Task Publicar_OutroOrganizador_DeveRecusar()
+    {
+        var (context, conexao) = await GetContextoBanco();
+        using (context)
+        using (conexao)
+        {
+            var usuario = new FakeUsuarioAtual();
+            var fake = new FakeComercializacaoClient { SimularIndisponibilidade = true };
+            var service = new EventoService(context, usuario, fake);
+            var inicio = DateTime.UtcNow.AddDays(5);
+            var criado = await service.Cadastrar(new CriarEventoRequest
+            {
+                Nome = "Meu Evento",
+                Inicio = inicio,
+                Fim = inicio.AddHours(2)
+            });
+
+            usuario.AlterarUsuario(Guid.NewGuid());
+            await Assert.ThrowsAsync<UnauthorizedAccessException>(
+                () => service.Publicar(criado.Id));
+            Assert.Null((await context.Set<Evento>().SingleAsync(e => e.Id == criado.Id)).PublicadoEm);
+        }
+    }
+
+    [Fact(DisplayName = "Publicar: evento inexistente deve retornar nao encontrado")]
+    public async Task Publicar_EventoInexistente_DeveRecusar()
+    {
+        var (context, conexao) = await GetContextoBanco();
+        using (context)
+        using (conexao)
+        {
+            var service = new EventoService(
+                context, new FakeUsuarioAtual(), new FakeComercializacaoClient());
+            await Assert.ThrowsAsync<KeyNotFoundException>(
+                () => service.Publicar(Guid.NewGuid()));
+        }
+    }
+
+    [Fact(DisplayName = "Publicar: evento ja publicado deve preservar a data")]
+    public async Task Publicar_EventoJaPublicado_DeveSerIdempotente()
+    {
+        var (context, conexao) = await GetContextoBanco();
+        using (context)
+        using (conexao)
+        {
+            var fake = new FakeComercializacaoClient { PossuiOfertaValida = true };
+            var service = new EventoService(context, new FakeUsuarioAtual(), fake);
+            var inicio = DateTime.UtcNow.AddDays(5);
+            var criado = await service.Cadastrar(new CriarEventoRequest
+            {
+                Nome = "Evento Publicado",
+                Inicio = inicio,
+                Fim = inicio.AddHours(2)
+            });
+            var primeira = await service.Publicar(criado.Id);
+
+            fake.PossuiOfertaValida = false;
+            fake.SimularIndisponibilidade = true;
+            var segunda = await service.Publicar(criado.Id);
+
+            Assert.Equal(primeira.PublicadoEm, segunda.PublicadoEm);
+            Assert.Equal(primeira.UrlEvento, segunda.UrlEvento);
+            Assert.Equal(EnumStatusPublicacaoEvento.PUBLICADO, segunda.StatusPublicacao);
+        }
+    }
+
+    [Fact(DisplayName = "Publicar: falha em Comercializacao nao altera evento")]
+    public async Task Publicar_ComercializacaoIndisponivel_DevePreservarEstado()
+    {
+        var (context, conexao) = await GetContextoBanco();
+        using (context)
+        using (conexao)
+        {
+            var fake = new FakeComercializacaoClient { SimularIndisponibilidade = true };
+            var service = new EventoService(context, new FakeUsuarioAtual(), fake);
+            var inicio = DateTime.UtcNow.AddDays(5);
+            var criado = await service.Cadastrar(new CriarEventoRequest
+            {
+                Nome = "Evento Indisponivel",
+                Inicio = inicio,
+                Fim = inicio.AddHours(2)
+            });
+
+            await Assert.ThrowsAsync<HttpRequestException>(
+                () => service.Publicar(criado.Id));
+            Assert.Null((await context.Set<Evento>().SingleAsync(e => e.Id == criado.Id)).PublicadoEm);
+        }
     }
 
     [Fact(DisplayName = "EventoService: PATCH deve preservar campos ausentes")]

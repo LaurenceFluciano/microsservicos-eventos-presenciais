@@ -11,13 +11,16 @@ public class EventoService
 {
     private readonly DataContext _dataContext;
     private readonly IUsuarioAtual _usuarioAtual;
+    private readonly IComercializacaoClient? _comercializacaoClient;
 
     public EventoService(
         DataContext dataContext,
-        IUsuarioAtual usuarioAtual)
+        IUsuarioAtual usuarioAtual,
+        IComercializacaoClient? comercializacaoClient = null)
     {
         _dataContext = dataContext;
         _usuarioAtual = usuarioAtual;
+        _comercializacaoClient = comercializacaoClient;
     }
 
     public async Task<DetalheEventoResponse> Cadastrar(
@@ -90,5 +93,49 @@ public class EventoService
 
         await _dataContext.SaveChangesAsync();
         return EventoMapper.ToDetalheResponse(evento);
+    }
+
+    public async Task<EventoResponse> Publicar(
+        Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        var organizadorId = _usuarioAtual.GetId();
+        var evento = await _dataContext.Set<Evento>()
+            .SingleOrDefaultAsync(e => e.Id == id, cancellationToken);
+
+        if (evento is null)
+            throw new KeyNotFoundException("Evento nao encontrado.");
+
+        if (evento.OrganizadorId != organizadorId)
+            throw new UnauthorizedAccessException(
+                "Apenas o organizador pode publicar este evento.");
+
+        // Publicacao repetida e idempotente: nao consulta Comercializacao novamente.
+        if (evento.PublicadoEm.HasValue)
+            return EventoMapper.ToEventoResponse(evento);
+
+        if (_comercializacaoClient is null)
+            throw new InvalidOperationException(
+                "O cliente de Comercializacao nao foi configurado.");
+
+        bool possuiOfertaValida;
+        try
+        {
+            possuiOfertaValida = await _comercializacaoClient
+                .PossuiOfertaValidaAsync(id, cancellationToken);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            throw new HttpRequestException(
+                "Nao foi possivel consultar as ofertas de ingresso. Tente novamente.", ex);
+        }
+
+        if (!possuiOfertaValida)
+            throw new Api.Error.DomainException(
+                "O evento precisa ter pelo menos uma oferta de ingresso valida para ser publicado.");
+
+        evento.Publicar();
+        await _dataContext.SaveChangesAsync(cancellationToken);
+        return EventoMapper.ToEventoResponse(evento);
     }
 }

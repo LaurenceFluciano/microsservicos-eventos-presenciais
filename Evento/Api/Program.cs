@@ -3,6 +3,7 @@ using Api.Application.Ports;
 using Api.Application.Services;
 using Api.Infrastructure;
 using Api.Infrastructure.Authentication;
+using Api.Infrastructure.Integration;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
@@ -20,6 +21,8 @@ builder.Services.AddScoped<EventoService>();
 
 if (builder.Environment.IsDevelopment())
 {
+    // Dependencia simulada ate integrar o MS Comercializacao.
+    builder.Services.AddScoped<IComercializacaoClient, FakeComercializacaoClient>();
 
     builder.Services
         .AddAuthentication("Fake")

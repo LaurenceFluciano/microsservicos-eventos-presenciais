@@ -1,8 +1,8 @@
 ﻿using System;
 
-public class Class1
+public class CriarContaInputDTO
 {
-	public Class1()
-	{
-	}
+    public Guid UsuarioId { get; set; }
+
+    public string Senha { get; set; } = string.Empty;
 }

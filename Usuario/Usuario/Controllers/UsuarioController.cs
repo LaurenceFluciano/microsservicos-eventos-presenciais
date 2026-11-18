@@ -1,33 +1,67 @@
 ﻿using AppTemplate.Servicos;
 using Microsoft.AspNetCore.Mvc;
 
-namespace AppTemplate.Controllers
+namespace Usuario.Controllers
 {
     [ApiController]
-    [Route("[controller]")]
-    public class ExemploController : ControllerBase
+    [Route("api/usuarios")]
+    public class UsuarioController : ControllerBase
     {
-        private ServExemplo _servExemplo;
+        private readonly UsuarioServ _servUsuario;
 
-        public ExemploController()
+        public UsuarioController()
         {
-            _servExemplo = new ServExemplo();
+            _servUsuario = new UsuarioServ();
         }
 
-        [Route("/api/[Controller]/{id}")]
-        [HttpGet]
-        public IActionResult Exemplo(int id)
+      
+        [HttpPut("{id}")]
+        public async Task<IActionResult> AtualizarUsuario(Guid id, UsuarioInputDTO dto)
         {
             try
             {
-                var exemploDto = _servExemplo.Exemplo(id);
-
-                return Ok(exemploDto);
+                var usuarioAtualizado = await _servUsuario.AtualizarUsuario(id, dto);
+                if (usuarioAtualizado == null)
+                {
+                    return NotFound();
+                }
+                return Ok(usuarioAtualizado);
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                return BadRequest(e.Message);
+                return BadRequest(ex.Message);
             }
         }
+        [Route("/api/[usuario]")]
+        [HttpPost]
+        public async Task<IActionResult> Criar(UsuarioInputDTO dto)
+        {
+            try
+            {
+                var usuario = await _usuarioServ.Criar(dto);
+                return CreatedAtAction(nameof(Criar), new { id = usuario.Id }, usuario);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Conflict(ex.Message);
+
+            }
+        }
+
+      
+	
+        [HttpGet("{id}")]
+            public async Task<IActionResult<UsuarioOutputDTO>> ObterPorId(Guid id)
+            {
+                var usuarioDto = await _UsuarioServ.ObterPorId(id);
+             
+            if (usuarioDto == null)
+                {
+
+                    return NotFound();
+                }
+            return Ok(usuarioDto);
+            }
+            
     }
 }

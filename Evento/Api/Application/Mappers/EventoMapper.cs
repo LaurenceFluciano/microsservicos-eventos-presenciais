@@ -29,6 +29,29 @@ public static class EventoMapper
         };
     }
 
+    public static EventoResponse ToEventoResponse(Evento evento)
+    {
+        return new EventoResponse
+        {
+            Id = evento.Id,
+            OrganizadorId = evento.OrganizadorId,
+            Nome = evento.Nome,
+            Descricao = evento.Descricao,
+            Local = evento.Local,
+            Slug = evento.SlugPublico,
+            Inicio = evento.Inicio,
+            Fim = evento.Fim,
+            StatusPublicacao = evento.GetStatusPublicacao(),
+            Status = evento.GetStatus(),
+            CriadoEm = evento.CriadoEm,
+            PublicadoEm = evento.PublicadoEm,
+            PublicacaoEncerradaEm = evento.PublicacaoEncerradaEm,
+            UrlEvento = evento.PublicadoEm.HasValue
+                ? $"http://localhost:8080/api/eventos/publicado/{evento.SlugPublico}"
+                : null
+        };
+    }
+
     public static DetalheEventoResponse ToDetalheResponse(
         Evento evento)
     {

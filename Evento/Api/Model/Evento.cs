@@ -176,6 +176,12 @@ public class Evento
             Local = local;
     }
 
+    // A segunda chamada de publicacao preserva a primeira data.
+    public void Publicar()
+    {
+        PublicadoEm ??= DateTime.UtcNow;
+    }
+
     public void DefinirNumeroSlug(int numero)
     {
         if (numero < 1)

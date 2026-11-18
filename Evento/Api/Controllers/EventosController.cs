@@ -63,6 +63,32 @@ public class EventosController : ControllerBase
         }
     }
 
+    [HttpPost("meus/{id:guid}/publicar")]
+    public async Task<IActionResult> Publicar(Guid id)
+    {
+        try
+        {
+            var resultado = await EventoService.Publicar(id);
+            return Ok(resultado);
+        }
+        catch (KeyNotFoundException exception)
+        {
+            return NotFound(exception.Message);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Forbid();
+        }
+        catch (HttpRequestException exception)
+        {
+            return StatusCode(503, exception.Message);
+        }
+        catch (DomainException exception)
+        {
+            return BadRequest(exception.Message);
+        }
+    }
+
     [HttpGet("meus")]
     public IActionResult MeusEventos()
     {

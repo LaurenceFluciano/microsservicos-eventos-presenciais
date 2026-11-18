@@ -7,7 +7,7 @@ namespace Usuario.Models
     public class UsuarioModel 
     {
 
-        public Guid Id { get; set; } = Guid.CreateVersion7()
+        public Guid Id { get; set; } = Guid.CreateVersion7();
 
        
         public string Nome { get; set; } = string.Empty;

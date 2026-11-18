@@ -56,6 +56,26 @@ public static class EventoMapper
         };
     }
 
+    public static ResumoEventoResponse ToResumoResponse(
+        Evento evento,
+        string? publicBaseUrl = null)
+    {
+        var detalhe = ToEventoResponse(evento, publicBaseUrl);
+
+        return new ResumoEventoResponse
+        {
+            Id = detalhe.Id,
+            Nome = detalhe.Nome,
+            Local = detalhe.Local,
+            Slug = detalhe.Slug,
+            Inicio = detalhe.Inicio,
+            Fim = detalhe.Fim,
+            Status = detalhe.Status,
+            StatusPublicacao = detalhe.StatusPublicacao,
+            UrlEvento = detalhe.UrlEvento
+        };
+    }
+
     public static DetalheEventoResponse ToDetalheResponse(
         Evento evento)
     {

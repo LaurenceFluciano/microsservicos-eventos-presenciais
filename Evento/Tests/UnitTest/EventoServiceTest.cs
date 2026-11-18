@@ -127,6 +127,195 @@ public class EventoServiceTest
         );
     }
 
+    [Fact(DisplayName = "Consultar: lista apenas eventos do organizador")]
+    public async Task ListarMeus_DeveRetornarApenasEventosProprios()
+    {
+        var (context, conexao) = await GetContextoBanco();
+        using (context)
+        using (conexao)
+        {
+            var usuario = new FakeUsuarioAtual();
+            var service = new EventoService(context, usuario);
+            var inicio = DateTime.UtcNow.AddDays(5);
+            var proprio = await service.Cadastrar(new CriarEventoRequest
+            {
+                Nome = "Evento do usuario",
+                Inicio = inicio,
+                Fim = inicio.AddHours(2)
+            });
+            var deOutro = new Evento(Guid.NewGuid(), "Evento de outro", inicio.AddDays(1), inicio.AddDays(1).AddHours(2));
+            context.Set<Evento>().Add(deOutro);
+            await context.SaveChangesAsync();
+
+            var resultado = await service.ListarMeus();
+
+            Assert.Single(resultado);
+            Assert.Equal(proprio.Id, resultado[0].Id);
+            Assert.DoesNotContain(resultado, e => e.Id == deOutro.Id);
+        }
+    }
+
+    [Fact(DisplayName = "Consultar: lista em ordem crescente e decrescente")]
+    public async Task ListarMeus_DeveOrdenarPorDataDeInicio()
+    {
+        var (context, conexao) = await GetContextoBanco();
+        using (context)
+        using (conexao)
+        {
+            var service = new EventoService(context, new FakeUsuarioAtual());
+            var inicio = DateTime.UtcNow.AddDays(5);
+            var primeiro = await service.Cadastrar(new CriarEventoRequest
+            {
+                Nome = "Evento primeiro",
+                Inicio = inicio,
+                Fim = inicio.AddHours(2)
+            });
+            var segundo = await service.Cadastrar(new CriarEventoRequest
+            {
+                Nome = "Evento segundo",
+                Inicio = inicio.AddDays(4),
+                Fim = inicio.AddDays(4).AddHours(2)
+            });
+
+            var crescente = await service.ListarMeus(ordem: "asc");
+            var decrescente = await service.ListarMeus(ordem: "desc");
+
+            Assert.Equal(new[] { primeiro.Id, segundo.Id }, crescente.Select(e => e.Id));
+            Assert.Equal(new[] { segundo.Id, primeiro.Id }, decrescente.Select(e => e.Id));
+        }
+    }
+
+    [Fact(DisplayName = "Consultar: filtra eventos publicados e rascunhos")]
+    public async Task ListarMeus_DeveFiltrarPorPublicacao()
+    {
+        var (context, conexao) = await GetContextoBanco();
+        using (context)
+        using (conexao)
+        {
+            var service = new EventoService(context, new FakeUsuarioAtual());
+            var inicio = DateTime.UtcNow.AddDays(5);
+            var publicado = await service.Cadastrar(new CriarEventoRequest
+            {
+                Nome = "Evento publicado para lista",
+                Inicio = inicio,
+                Fim = inicio.AddHours(2)
+            });
+            var rascunho = await service.Cadastrar(new CriarEventoRequest
+            {
+                Nome = "Evento rascunho para lista",
+                Inicio = inicio.AddDays(1),
+                Fim = inicio.AddDays(1).AddHours(2)
+            });
+
+            var entidade = await context.Set<Evento>().SingleAsync(e => e.Id == publicado.Id);
+            entidade.Publicar();
+            await context.SaveChangesAsync();
+
+            var publicados = await service.ListarMeus(publicado: true, publicBaseUrl: "https://eventos.exemplo.com");
+            var rascunhos = await service.ListarMeus(publicado: false);
+
+            Assert.Single(publicados);
+            Assert.Equal(publicado.Id, publicados[0].Id);
+            Assert.Equal($"https://eventos.exemplo.com/api/eventos/publicado/{publicado.Slug}", publicados[0].UrlEvento);
+            Assert.Single(rascunhos);
+            Assert.Equal(rascunho.Id, rascunhos[0].Id);
+            Assert.Null(rascunhos[0].UrlEvento);
+        }
+    }
+
+    [Fact(DisplayName = "Consultar: mostra detalhes do proprio evento")]
+    public async Task ConsultarMeu_EventoProprio_DeveRetornarDetalhes()
+    {
+        var (context, conexao) = await GetContextoBanco();
+        using (context)
+        using (conexao)
+        {
+            var service = new EventoService(context, new FakeUsuarioAtual());
+            var inicio = DateTime.UtcNow.AddDays(5);
+            var criado = await service.Cadastrar(new CriarEventoRequest
+            {
+                Nome = "Evento detalhado",
+                Descricao = "Informacoes privadas",
+                Local = "Auditorio",
+                Inicio = inicio,
+                Fim = inicio.AddHours(2)
+            });
+
+            var entidade = await context.Set<Evento>().SingleAsync(e => e.Id == criado.Id);
+            entidade.Publicar();
+            await context.SaveChangesAsync();
+
+            var resultado = await service.ConsultarMeu(
+                criado.Id, publicBaseUrl: "https://evento.exemplo.org");
+
+            Assert.Equal(criado.Id, resultado.Id);
+            Assert.Equal("Informacoes privadas", resultado.Descricao);
+            Assert.Equal("Auditorio", resultado.Local);
+            Assert.Equal(EnumStatusPublicacaoEvento.PUBLICADO, resultado.StatusPublicacao);
+            Assert.Equal($"https://evento.exemplo.org/api/eventos/publicado/{criado.Slug}", resultado.UrlEvento);
+        }
+    }
+
+    [Fact(DisplayName = "Consultar: impede visualizar evento de outro organizador")]
+    public async Task ConsultarMeu_EventoDeOutro_DeveRecusar()
+    {
+        var (context, conexao) = await GetContextoBanco();
+        using (context)
+        using (conexao)
+        {
+            var service = new EventoService(context, new FakeUsuarioAtual());
+            var inicio = DateTime.UtcNow.AddDays(5);
+            var deOutro = new Evento(Guid.NewGuid(), "Evento privado de outro", inicio, inicio.AddHours(2));
+            context.Set<Evento>().Add(deOutro);
+            await context.SaveChangesAsync();
+
+            await Assert.ThrowsAsync<UnauthorizedAccessException>(
+                () => service.ConsultarMeu(deOutro.Id));
+        }
+    }
+
+    [Fact(DisplayName = "Consultar: evento inexistente retorna nao encontrado")]
+    public async Task ConsultarMeu_EventoInexistente_DeveRecusar()
+    {
+        var (context, conexao) = await GetContextoBanco();
+        using (context)
+        using (conexao)
+        {
+            var service = new EventoService(context, new FakeUsuarioAtual());
+            await Assert.ThrowsAsync<KeyNotFoundException>(
+                () => service.ConsultarMeu(Guid.NewGuid()));
+        }
+    }
+
+    [Fact(DisplayName = "Consultar: sem eventos retorna lista vazia")]
+    public async Task ListarMeus_SemEventos_DeveRetornarListaVazia()
+    {
+        var (context, conexao) = await GetContextoBanco();
+        using (context)
+        using (conexao)
+        {
+            var service = new EventoService(context, new FakeUsuarioAtual());
+
+            var resultado = await service.ListarMeus(publicado: true);
+
+            Assert.Empty(resultado);
+        }
+    }
+
+    [Fact(DisplayName = "Consultar: ordem invalida e recusada")]
+    public async Task ListarMeus_OrdemInvalida_DeveRecusar()
+    {
+        var (context, conexao) = await GetContextoBanco();
+        using (context)
+        using (conexao)
+        {
+            var service = new EventoService(context, new FakeUsuarioAtual());
+
+            await Assert.ThrowsAsync<ArgumentException>(
+                () => service.ListarMeus(ordem: "invalida"));
+        }
+    }
+
     [Fact(DisplayName = "Publicar: evento com oferta valida deve publicar e retornar URL")]
     public async Task Publicar_ComOfertaValida_DevePublicar()
     {

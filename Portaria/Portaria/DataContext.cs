@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using AppTemplate.Model;
+using Microsoft.EntityFrameworkCore;
 
 namespace AppTemplate
 {
@@ -6,16 +7,34 @@ namespace AppTemplate
     {
         public DataContext(DbContextOptions<DataContext> options) : base(options)
         {
-
         }
 
-        //public DbSet<Exemplo> Exemplos { get; set; }
-
+        public DbSet<CredencialAcesso> CredenciaisAcesso => Set<CredencialAcesso>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            //modelBuilder.Entity<Exemplo>().HasKey(p => p.Id);
+            modelBuilder.Entity<CredencialAcesso>(entity =>
+            {
+                entity.ToTable("credenciais_acesso");
 
+                entity.HasKey(c => c.Id);
+
+                entity.Property(c => c.Codigo)
+                    .HasMaxLength(100)
+                    .IsRequired();
+
+                entity.Property(c => c.Status)
+                    .HasConversion<string>()
+                    .HasMaxLength(30)
+                    .IsRequired();
+
+                entity.Property(c => c.DataEmissao)
+                    .IsRequired();
+
+                entity.HasIndex(c => c.Codigo).IsUnique();
+                entity.HasIndex(c => c.IngressoId).IsUnique();
+                entity.HasIndex(c => c.EventoId);
+            });
 
             base.OnModelCreating(modelBuilder);
         }

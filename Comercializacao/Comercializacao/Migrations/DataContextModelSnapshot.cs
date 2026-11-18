@@ -85,6 +85,37 @@ namespace Comercializacao.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Comercializacao.Model.Pagamento", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTimeOffset>("CriadoEm")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTimeOffset?>("DataPagamento")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("PedidoId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("Valor")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PedidoId");
+
+                    b.ToTable("pagamentos", (string)null);
+                });
+
             modelBuilder.Entity("Comercializacao.Model.Pedido", b =>
                 {
                     b.Property<Guid>("Id")
@@ -148,6 +179,17 @@ namespace Comercializacao.Migrations
                     b.Navigation("Pedido");
                 });
 
+            modelBuilder.Entity("Comercializacao.Model.Pagamento", b =>
+                {
+                    b.HasOne("Comercializacao.Model.Pedido", "Pedido")
+                        .WithMany("Pagamentos")
+                        .HasForeignKey("PedidoId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Pedido");
+                });
+
             modelBuilder.Entity("Comercializacao.Model.Pedido", b =>
                 {
                     b.HasOne("Comercializacao.Model.OfertaIngresso", "OfertaIngresso")
@@ -167,6 +209,8 @@ namespace Comercializacao.Migrations
             modelBuilder.Entity("Comercializacao.Model.Pedido", b =>
                 {
                     b.Navigation("Ingressos");
+
+                    b.Navigation("Pagamentos");
                 });
 #pragma warning restore 612, 618
         }

@@ -1,5 +1,6 @@
 
 using Api;
+using Api.Error;
 using Api.Application.DTO;
 using Api.Application.Ports;
 using Api.Application.Services;
@@ -123,5 +124,177 @@ public class EventoServiceTest
             2,
             await context.Set<Evento>().CountAsync()
         );
+    }
+
+    [Fact(DisplayName = "EventoService: PATCH deve preservar campos ausentes")]
+    public async Task Atualizar_SomenteDescricao_DevePreservarDemaisCampos()
+    {
+        var (context, conexao) = await GetContextoBanco();
+        using (context)
+        using (conexao)
+        {
+            var usuario = new FakeUsuarioAtual();
+            var service = new EventoService(context, usuario);
+            var inicio = DateTime.UtcNow.AddDays(5);
+            var criado = await service.Cadastrar(new CriarEventoRequest
+            {
+                Nome = "Feira de Tecnologia",
+                Inicio = inicio,
+                Fim = inicio.AddHours(3),
+                Descricao = "Original",
+                Local = "Centro"
+            });
+
+            var atualizado = await service.Atualizar(
+                criado.Id,
+                new AtualizarEventoRequest { Descricao = "Descrição corrigida" }
+            );
+
+            Assert.Equal("Descrição corrigida", atualizado.Descricao);
+            Assert.Equal(criado.Nome, atualizado.Nome);
+            Assert.Equal(criado.Local, atualizado.Local);
+            Assert.Equal(criado.Inicio, atualizado.Inicio);
+            Assert.Equal(criado.Fim, atualizado.Fim);
+            Assert.Equal(criado.Slug, atualizado.Slug);
+            Assert.Equal(usuario.GetId(), atualizado.OrganizadorId);
+        }
+    }
+
+    [Fact(DisplayName = "EventoService: PATCH permite atualizar evento publicado")]
+    public async Task Atualizar_EventoPublicado_DevePermitirAlteracao()
+    {
+        var (context, conexao) = await GetContextoBanco();
+        using (context)
+        using (conexao)
+        {
+            var service = new EventoService(context, new FakeUsuarioAtual());
+            var inicio = DateTime.UtcNow.AddDays(5);
+            var criado = await service.Cadastrar(new CriarEventoRequest
+            {
+                Nome = "Congresso",
+                Inicio = inicio,
+                Fim = inicio.AddHours(2)
+            });
+
+            var entidade = await context.Set<Evento>().SingleAsync(e => e.Id == criado.Id);
+            entidade.PublicadoEm = DateTime.UtcNow;
+            await context.SaveChangesAsync();
+
+            var atualizado = await service.Atualizar(
+                criado.Id,
+                new AtualizarEventoRequest { Local = "Novo local" }
+            );
+
+            Assert.Equal("Novo local", atualizado.Local);
+            Assert.Equal(EnumStatusPublicacaoEvento.PUBLICADO, atualizado.StatusPublicacao);
+        }
+    }
+
+    [Fact(DisplayName = "EventoService: PATCH recusa outro organizador")]
+    public async Task Atualizar_OrganizadorDiferente_DeveRecusar()
+    {
+        var (context, conexao) = await GetContextoBanco();
+        using (context)
+        using (conexao)
+        {
+            var usuario = new FakeUsuarioAtual();
+            var service = new EventoService(context, usuario);
+            var inicio = DateTime.UtcNow.AddDays(5);
+            var criado = await service.Cadastrar(new CriarEventoRequest
+            {
+                Nome = "Meu Evento",
+                Inicio = inicio,
+                Fim = inicio.AddHours(2)
+            });
+
+            usuario.AlterarUsuario(Guid.NewGuid());
+            await Assert.ThrowsAsync<UnauthorizedAccessException>(
+                () => service.Atualizar(
+                    criado.Id,
+                    new AtualizarEventoRequest { Nome = "Nome adulterado" }
+                )
+            );
+
+            var entidade = await context.Set<Evento>().SingleAsync(e => e.Id == criado.Id);
+            Assert.Equal("Meu Evento", entidade.Nome);
+        }
+    }
+
+    [Fact(DisplayName = "EventoService: PATCH gera slug único ao trocar o nome")]
+    public async Task Atualizar_ParaNomeExistente_DeveNumerarSlug()
+    {
+        var (context, conexao) = await GetContextoBanco();
+        using (context)
+        using (conexao)
+        {
+            var service = new EventoService(context, new FakeUsuarioAtual());
+            var inicio = DateTime.UtcNow.AddDays(5);
+            var primeiro = await service.Cadastrar(new CriarEventoRequest
+            {
+                Nome = "Evento Musical",
+                Inicio = inicio,
+                Fim = inicio.AddHours(2)
+            });
+            var segundo = await service.Cadastrar(new CriarEventoRequest
+            {
+                Nome = "Evento Cultural",
+                Inicio = inicio,
+                Fim = inicio.AddHours(2)
+            });
+
+            var atualizado = await service.Atualizar(
+                segundo.Id,
+                new AtualizarEventoRequest { Nome = "Evento Musical" }
+            );
+
+            Assert.Equal("evento-musical-2", atualizado.Slug);
+            Assert.Equal("evento-musical", primeiro.Slug);
+        }
+    }
+
+    [Fact(DisplayName = "EventoService: PATCH rejeita período resultante inválido")]
+    public async Task Atualizar_ApenasFimInvalido_DeveRecusar()
+    {
+        var (context, conexao) = await GetContextoBanco();
+        using (context)
+        using (conexao)
+        {
+            var service = new EventoService(context, new FakeUsuarioAtual());
+            var inicio = DateTime.UtcNow.AddDays(5);
+            var criado = await service.Cadastrar(new CriarEventoRequest
+            {
+                Nome = "Feira de Ciências",
+                Inicio = inicio,
+                Fim = inicio.AddHours(2)
+            });
+
+            await Assert.ThrowsAsync<DomainException>(
+                () => service.Atualizar(
+                    criado.Id,
+                    new AtualizarEventoRequest { Fim = inicio.AddHours(-1) }
+                )
+            );
+
+            var entidade = await context.Set<Evento>().SingleAsync(e => e.Id == criado.Id);
+            Assert.Equal(inicio.AddHours(2), entidade.Fim);
+        }
+    }
+
+    [Fact(DisplayName = "EventoService: PATCH recusa evento inexistente")]
+    public async Task Atualizar_EventoInexistente_DeveRecusar()
+    {
+        var (context, conexao) = await GetContextoBanco();
+        using (context)
+        using (conexao)
+        {
+            var service = new EventoService(context, new FakeUsuarioAtual());
+
+            await Assert.ThrowsAsync<KeyNotFoundException>(
+                () => service.Atualizar(
+                    Guid.NewGuid(),
+                    new AtualizarEventoRequest { Local = "Nova localização" }
+                )
+            );
+        }
     }
 }

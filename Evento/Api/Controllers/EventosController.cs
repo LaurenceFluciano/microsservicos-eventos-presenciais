@@ -1,4 +1,4 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using Api.Application.Services;
 using Api.Application.DTO;
 using Microsoft.AspNetCore.Authorization;
@@ -32,6 +32,30 @@ public class EventosController : ControllerBase
             var result = await EventoService.Cadastrar(request);
 
             return Ok(result);
+        }
+        catch (DomainException exception)
+        {
+            return BadRequest(exception.Message);
+        }
+    }
+
+    [HttpPatch("meus/{id:guid}")]
+    public async Task<IActionResult> Atualizar(
+        Guid id,
+        [FromBody] AtualizarEventoRequest request)
+    {
+        try
+        {
+            var resultado = await EventoService.Atualizar(id, request);
+            return Ok(resultado);
+        }
+        catch (KeyNotFoundException exception)
+        {
+            return NotFound(exception.Message);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Forbid();
         }
         catch (DomainException exception)
         {

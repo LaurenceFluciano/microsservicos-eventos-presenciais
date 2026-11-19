@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Usuario.DTO;
 using Usuario.Servicos;
@@ -9,12 +10,34 @@ namespace Usuario.Controllers
     public sealed class AuthController : ControllerBase
     {
         private readonly CadastroContaService _cadastroContaService;
+        private readonly AuthService _authService;
 
-        public AuthController(CadastroContaService cadastroContaService)
+        public AuthController(
+            CadastroContaService cadastroContaService,
+            AuthService authService)
         {
             _cadastroContaService = cadastroContaService;
+            _authService = authService;
         }
 
+        [AllowAnonymous]
+        [HttpPost("login")]
+        public async Task<IActionResult> Login(
+            [FromBody] LoginInputDTO dto,
+            CancellationToken cancellationToken)
+        {
+            try
+            {
+                var result = await _authService.LoginAsync(dto, cancellationToken);
+                return Ok(result);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return Unauthorized(new { mensagem = "Credenciais inválidas." });
+            }
+        }
+
+        [AllowAnonymous]
         [HttpPost("register")]
         public async Task<IActionResult> Registrar(
             [FromBody] CriarContaInputDTO dto,
@@ -40,6 +63,7 @@ namespace Usuario.Controllers
             }
         }
 
+        [AllowAnonymous]
         [HttpPost("verify-email")]
         public async Task<IActionResult> VerificarEmail(
             [FromBody] VerificarEmailInputDTO dto,

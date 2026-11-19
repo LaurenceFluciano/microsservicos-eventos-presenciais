@@ -1,36 +1,76 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Usuario.DTO;
 using Usuario.Servicos;
-using Microsoft.AspNetCore.Authorization;
+
 namespace Usuario.Controllers
 {
     [ApiController]
     [Route("api/users")]
-    public class UsuarioController : ControllerBase
+    public sealed class UsuarioController : ControllerBase
     {
-        private readonly UsuarioServ _UsuarioServ;
+        private readonly UsuarioServ _usuarioServ;
+        private readonly IUsuarioAtual _usuarioAtual;
 
-        public UsuarioController()
+        public UsuarioController(UsuarioServ usuarioServ, IUsuarioAtual usuarioAtual)
         {
-            _UsuarioServ = new UsuarioServ();
+            _usuarioServ = usuarioServ;
+            _usuarioAtual = usuarioAtual;
+        }
+
+        [Authorize(Policy = "UserJwt")]
+        [HttpGet("me")]
+        public async Task<IActionResult> ObterMeusDados()
+        {
+            var usuarioId = _usuarioAtual.Id;
+            if (usuarioId is null)
+            {
+                return Unauthorized();
+            }
+
+            var usuario = await _usuarioServ.ObterPorId(usuarioId.Value);
+            return usuario is null ? NotFound() : Ok(usuario);
+        }
+
+        [Authorize(Policy = "UserJwt")]
+        [HttpPatch("me")]
+        public async Task<IActionResult> AtualizarMeusDados(
+            [FromBody] AtualizarMeInputDTO dto,
+            CancellationToken cancellationToken)
+        {
+            var usuarioId = _usuarioAtual.Id;
+            if (usuarioId is null)
+            {
+                return Unauthorized();
+            }
+
+            try
+            {
+                var usuario = await _usuarioServ.AtualizarMeAsync(
+                    usuarioId.Value,
+                    dto,
+                    cancellationToken);
+                return usuario is null ? NotFound() : Ok(usuario);
+            }
+            catch (ValidationException ex)
+            {
+                return BadRequest(new { mensagem = ex.Message });
+            }
         }
 
         [Authorize(Policy = "ServiceApiKey")]
-        [HttpPut("{id}")]
-        public async Task<IActionResult> AtualizarUsuario(Guid id, UsuarioInputDTO dto)
+        [HttpPut("{id:guid}")]
+        public async Task<IActionResult> AtualizarUsuario(Guid id, [FromBody] UsuarioInputDTO dto)
         {
             try
             {
-                var usuarioAtualizado = await _UsuarioServ.AtualizarUsuario(id, dto);
-                if (usuarioAtualizado == null)
-                {
-                    return NotFound();
-                }
-                return Ok(usuarioAtualizado);
+                var usuarioAtualizado = await _usuarioServ.AtualizarUsuario(id, dto);
+                return usuarioAtualizado is null ? NotFound() : Ok(usuarioAtualizado);
             }
-            catch (Exception ex)
+            catch (InvalidOperationException ex)
             {
-                return BadRequest(ex.Message);
+                return Conflict(new { mensagem = ex.Message });
             }
         }
         [Authorize(Policy = "ServiceApiKey")]
@@ -39,7 +79,7 @@ namespace Usuario.Controllers
         {
             try
             {
-                var usuario = await _UsuarioServ.Criar(dto);
+                var usuario = await _usuarioServ.Criar(dto);
                 return CreatedAtAction(nameof(ObterPorId), new { id = usuario.Id }, usuario);
             }
             catch (InvalidOperationException ex)
@@ -51,18 +91,12 @@ namespace Usuario.Controllers
 
 
         [Authorize(Policy = "ServiceApiKey")]
-        [HttpGet("{id}")]
-            public async Task<IActionResult> ObterPorId(Guid id)
-            {
-                var usuarioDto = await _UsuarioServ.ObterPorId(id);
-             
-            if (usuarioDto == null)
-                {
-
-                    return NotFound();
-                }
-            return Ok(usuarioDto);
-            }
+        [HttpGet("{id:guid}")]
+        public async Task<IActionResult> ObterPorId(Guid id)
+        {
+            var usuarioDto = await _usuarioServ.ObterPorId(id);
+            return usuarioDto is null ? NotFound() : Ok(usuarioDto);
+        }
             
     }
 }

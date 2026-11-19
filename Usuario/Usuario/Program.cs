@@ -1,10 +1,10 @@
 using AppTemplate;
-using AppTemplate.Infra;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Identity;
 using Usuario.Autenticacao;
 using Usuario.Models;
 using Usuario.Servicos;
@@ -23,6 +23,15 @@ builder.Services.AddControllers();
 builder.Services.AddScoped<IPasswordHasher<ContaModel>, PasswordHasher<ContaModel>>();
 builder.Services.AddScoped<TokenVerificacaoEmailService>();
 builder.Services.AddScoped<CadastroContaService>();
+builder.Services.AddScoped<AuthService>();
+builder.Services.AddScoped<UsuarioServ>();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<IUsuarioAtual, UsuarioAtual>();
+
+var tokenJwtService = new TokenJwtService(builder.Configuration);
+builder.Services.AddSingleton<ITokenJwtService>(tokenJwtService);
+
+
 
 if (builder.Environment.IsDevelopment())
 {
@@ -43,7 +52,12 @@ builder.Services
     })
     .AddScheme<AuthenticationSchemeOptions, ApiKeyAuthenticationHandler>(
         ApiKeyAuthenticationHandler.SchemeName,
-        _ => { });
+        _ => { })
+    .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
+    {
+        options.MapInboundClaims = false;
+        options.TokenValidationParameters = tokenJwtService.CriarParametrosValidacao();
+    });
 
 builder.Services.AddAuthorization(options =>
 {
@@ -51,6 +65,12 @@ builder.Services.AddAuthorization(options =>
     {
         policy.AddAuthenticationSchemes(
             ApiKeyAuthenticationHandler.SchemeName);
+        policy.RequireAuthenticatedUser();
+    });
+
+    options.AddPolicy("UserJwt", policy =>
+    {
+        policy.AddAuthenticationSchemes(JwtBearerDefaults.AuthenticationScheme);
         policy.RequireAuthenticatedUser();
     });
 });
@@ -77,8 +97,6 @@ builder.Services.AddCors(options =>
 builder.Services.AddDbContext<DataContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection"))
 );
-
-GeradorDeServicos.ServiceProvider = builder.Services.BuildServiceProvider();
 
 var app = builder.Build();
 

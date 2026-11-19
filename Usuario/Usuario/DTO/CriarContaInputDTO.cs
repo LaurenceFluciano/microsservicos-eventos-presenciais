@@ -1,8 +1,24 @@
-﻿using System;
+﻿using System.ComponentModel.DataAnnotations;
 
-public class CriarContaInputDTO
+namespace Usuario.DTO
 {
-    public Guid UsuarioId { get; set; }
+    public class CriarContaInputDTO
+    {
+        [Required]
+        [MaxLength(150)]
+        public string Nome { get; set; } = string.Empty;
 
-    public string Senha { get; set; } = string.Empty;
+        [Required]
+        [EmailAddress]
+        [MaxLength(255)]
+        public string Email { get; set; } = string.Empty;
+
+        [MaxLength(20)]
+        public string? Telefone { get; set; }
+
+        [Required]
+        [MinLength(8)]
+        [MaxLength(128)]
+        public string Senha { get; set; } = string.Empty;
+    }
 }

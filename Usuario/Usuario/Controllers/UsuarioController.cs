@@ -1,26 +1,27 @@
-﻿using AppTemplate.Servicos;
-using Microsoft.AspNetCore.Mvc;
-
+﻿using Microsoft.AspNetCore.Mvc;
+using Usuario.DTO;
+using Usuario.Servicos;
+using Microsoft.AspNetCore.Authorization;
 namespace Usuario.Controllers
 {
     [ApiController]
-    [Route("api/usuarios")]
+    [Route("api/users")]
     public class UsuarioController : ControllerBase
     {
-        private readonly UsuarioServ _servUsuario;
+        private readonly UsuarioServ _UsuarioServ;
 
         public UsuarioController()
         {
-            _servUsuario = new UsuarioServ();
+            _UsuarioServ = new UsuarioServ();
         }
 
-      
+        [Authorize(Policy = "ServiceApiKey")]
         [HttpPut("{id}")]
         public async Task<IActionResult> AtualizarUsuario(Guid id, UsuarioInputDTO dto)
         {
             try
             {
-                var usuarioAtualizado = await _servUsuario.AtualizarUsuario(id, dto);
+                var usuarioAtualizado = await _UsuarioServ.AtualizarUsuario(id, dto);
                 if (usuarioAtualizado == null)
                 {
                     return NotFound();
@@ -32,14 +33,14 @@ namespace Usuario.Controllers
                 return BadRequest(ex.Message);
             }
         }
-        [Route("/api/[usuario]")]
+        [Authorize(Policy = "ServiceApiKey")]
         [HttpPost]
-        public async Task<IActionResult> Criar(UsuarioInputDTO dto)
+        public async Task<IActionResult> Criar([FromBody] UsuarioInputDTO dto)
         {
             try
             {
-                var usuario = await _usuarioServ.Criar(dto);
-                return CreatedAtAction(nameof(Criar), new { id = usuario.Id }, usuario);
+                var usuario = await _UsuarioServ.Criar(dto);
+                return CreatedAtAction(nameof(ObterPorId), new { id = usuario.Id }, usuario);
             }
             catch (InvalidOperationException ex)
             {
@@ -48,10 +49,10 @@ namespace Usuario.Controllers
             }
         }
 
-      
-	
+
+        [Authorize(Policy = "ServiceApiKey")]
         [HttpGet("{id}")]
-            public async Task<IActionResult<UsuarioOutputDTO>> ObterPorId(Guid id)
+            public async Task<IActionResult> ObterPorId(Guid id)
             {
                 var usuarioDto = await _UsuarioServ.ObterPorId(id);
              

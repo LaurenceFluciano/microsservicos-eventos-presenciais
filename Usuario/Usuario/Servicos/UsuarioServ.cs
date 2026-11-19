@@ -1,8 +1,8 @@
-﻿using Usuario.DTO;
-using Usuario.Infra;
-using Microsoft.AspNetCore.Http.HttpResults;
-using Microsoft.EntityFrameworkCore.Metadata.Conventions;
+﻿using AppTemplate;
+using AppTemplate.Infra;
 using Microsoft.EntityFrameworkCore;
+using Usuario.DTO;
+using Usuario.Models;
 
 namespace Usuario.Servicos
 {
@@ -14,13 +14,26 @@ namespace Usuario.Servicos
         {
             _dataContext = GeradorDeServicos.CarregarContexto();
         }
-        public async Task<UsuarioOutputDTO> AtualizarUsuario(Guid id, UsuarioInputDTO dto)
+        public async Task<UsuarioOutputDTO?> AtualizarUsuario(Guid id, UsuarioInputDTO dto)
         {
-            var usuarioExistente = await _dataContext.Usuarios.FirstOrDefaultAsync(u => u.Id == id);
+            var usuarioExistente = await _dataContext.Usuarios
+                .FirstOrDefaultAsync(u => u.Id == id);
+
             if (usuarioExistente == null)
             {
                 return null;
             }
+
+            dto.Email = dto.Email.Trim().ToLowerInvariant();
+
+            var emailJaExiste = await _dataContext.Usuarios
+                .AnyAsync(u => u.Id != id && u.Email == dto.Email);
+
+            if (emailJaExiste)
+            {
+                throw new InvalidOperationException("O e-mail já está em uso.");
+            }
+
             usuarioExistente.Nome = dto.Nome;
             usuarioExistente.Email = dto.Email;
             usuarioExistente.Telefone = dto.Telefone;
@@ -30,11 +43,12 @@ namespace Usuario.Servicos
                 Id = usuarioExistente.Id,
                 Nome = usuarioExistente.Nome,
                 Email = usuarioExistente.Email,
-                Telefone = usuarioExistente.Telefone
+                Telefone = usuarioExistente.Telefone,
+                CriadoEm = usuarioExistente.CriadoEm
             };
 
         }
-        public async Task<UsuarioOutputDTO> ObterPorId(Guid id)
+        public async Task<UsuarioOutputDTO?> ObterPorId(Guid id)
         {
             var usuario = await _dataContext.Usuarios.FirstOrDefaultAsync(u => u.Id == id);
             if (usuario == null)
@@ -46,10 +60,11 @@ namespace Usuario.Servicos
                 Id = usuario.Id,
                 Nome = usuario.Nome,
                 Email = usuario.Email,
-                Telefone = usuario.Telefone
+                Telefone = usuario.Telefone,
+                CriadoEm = usuario.CriadoEm
             };
 
-        }           
+        }
 
 
         public async Task<UsuarioOutputDTO> Criar(UsuarioInputDTO dto)
@@ -62,7 +77,7 @@ namespace Usuario.Servicos
 
             if (emailJaExiste)
             {
-                throw new Exception("O e-mail já está em uso.");
+                throw new InvalidOperationException("O e-mail já está em uso.");
             }
 
             var novoUsuario = new UsuarioModel
@@ -82,7 +97,8 @@ namespace Usuario.Servicos
                 Id = novoUsuario.Id,
                 Nome = novoUsuario.Nome,
                 Email = novoUsuario.Email,
-                Telefone = novoUsuario.Telefone
+                Telefone = novoUsuario.Telefone,
+                CriadoEm = novoUsuario.CriadoEm
             };
         }
     }

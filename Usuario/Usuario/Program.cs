@@ -3,12 +3,57 @@ using AppTemplate.Infra;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Identity;
+using Usuario.Autenticacao;
+using Usuario.Models;
+using Usuario.Servicos;
 
 var builder = WebApplication.CreateBuilder(args);
+
+if (string.IsNullOrWhiteSpace(builder.Configuration["Authentication:ApiKey"]))
+{
+    throw new InvalidOperationException(
+        "Configure Authentication:ApiKey antes de iniciar o serviço.");
+}
 
 // Add services to the container.
 
 builder.Services.AddControllers();
+builder.Services.AddScoped<IPasswordHasher<ContaModel>, PasswordHasher<ContaModel>>();
+builder.Services.AddScoped<TokenVerificacaoEmailService>();
+builder.Services.AddScoped<CadastroContaService>();
+
+if (builder.Environment.IsDevelopment())
+{
+    builder.Services.AddSingleton<IEmailSender, FakeEmailSender>();
+}
+else
+{
+    builder.Services.AddSingleton<IEmailSender, EmailSenderNotConfigured>();
+}
+
+builder.Services
+    .AddAuthentication(options =>
+    {
+        options.DefaultAuthenticateScheme =
+            ApiKeyAuthenticationHandler.SchemeName;
+        options.DefaultChallengeScheme =
+            ApiKeyAuthenticationHandler.SchemeName;
+    })
+    .AddScheme<AuthenticationSchemeOptions, ApiKeyAuthenticationHandler>(
+        ApiKeyAuthenticationHandler.SchemeName,
+        _ => { });
+
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("ServiceApiKey", policy =>
+    {
+        policy.AddAuthenticationSchemes(
+            ApiKeyAuthenticationHandler.SchemeName);
+        policy.RequireAuthenticatedUser();
+    });
+});
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
@@ -59,6 +104,8 @@ app.MapScalarApiReference();
 app.UseCors();
 
 app.UseHttpsRedirection();
+
+app.UseAuthentication();
 
 app.UseAuthorization();
 

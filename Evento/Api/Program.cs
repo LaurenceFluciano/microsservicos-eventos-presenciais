@@ -1,9 +1,11 @@
 using Api;
 using Api.Application.Ports;
 using Api.Application.Services;
+using Api.Config;
 using Api.Infrastructure;
 using Api.Infrastructure.Authentication;
 using Api.Infrastructure.Integration;
+using Api.Middlewares;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
@@ -18,6 +20,14 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IUsuarioAtual, UsuarioAtualHttp>();
 builder.Services.AddScoped<EventoService>();
 
+builder.Services.AddOptions<InternalApiConfig>()
+    .Bind(
+        builder.Configuration.GetSection(
+            InternalApiConfig.SectionName
+        )
+    )
+    .Validate(config => string.IsNullOrWhiteSpace(config.ApiKey), "InternalApi:ApiKey é obrigatório para a inicialização.")
+    .ValidateOnStart();
 
 if (builder.Environment.IsDevelopment())
 {
@@ -73,7 +83,10 @@ builder.Services.AddDbContext<DataContext>(options =>
 
 GeradorDeServicos.ServiceProvider = builder.Services.BuildServiceProvider();
 
+
+
 var app = builder.Build();
+
 
 using (var scope = app.Services.CreateScope())
 {
@@ -95,6 +108,8 @@ app.MapOpenApi();
 app.MapScalarApiReference();
 
 app.UseCors();
+
+app.UseInternalApi();
 
 app.UseHttpsRedirection();
 

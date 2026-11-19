@@ -86,7 +86,13 @@ public class DataContext : DbContext
             entity.Property(o => o.CriadoEm)
                 .IsRequired();
 
-            entity.HasIndex(o => o.EventoId);
+            entity.HasIndex(o => o.IdEvento);
+
+            entity.HasIndex(o => new
+            {
+                o.IdOrganizador,
+                o.IdEvento
+            });
         });
 
         // ========================================

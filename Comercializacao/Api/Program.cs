@@ -1,14 +1,25 @@
 using Api;
-using Api.Infra;
+using Api.Infrastructure;
 using Api.Config;
 using Api.Middlewares;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
+using Api.Application.Ports;
+using Api.Infrastructure.Client;
+using Microsoft.AspNetCore.Authentication;
+using Api.Infrastructure.Authentication;
+using Api.Application.Services;
+using System.Text.Json.Serialization;
+using Api.Application.Mappers;
+using Api.Error;
 
 var builder = WebApplication.CreateBuilder(args);
 
-
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<IUsuarioAtual, UsuarioAtualHttp>();
+builder.Services.AddScoped<OfertaIngressoService>();
+builder.Services.AddScoped<OfertaIngressoMapper>();
 
 // Add services to the container.
 
@@ -18,12 +29,52 @@ builder.Services.AddOptions<InternalApiConfig>()
             InternalApiConfig.SectionName
         )
     )
-    .Validate(config => string.IsNullOrWhiteSpace(config.ApiKey), "InternalApi:ApiKey é obrigatório para a inicialização.")
+    .Validate(
+        config => !string.IsNullOrWhiteSpace(config.ApiKey),
+        "InternalApi:ApiKey é obrigatório para a inicialização."
+    )
     .ValidateOnStart();
 
-builder.Services.AddControllers();
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+if (builder.Environment.IsDevelopment())
+{
+    builder.Services.AddScoped<IEventoClient, FakeEventoClient>();
+
+    builder.Services
+        .AddAuthentication("Fake")
+        .AddScheme<
+            AuthenticationSchemeOptions,
+            FakeAuthenticationHandler
+        >("Fake", options => { });
+    
+}
+else
+{
+
+    builder.Services.AddHttpClient<IEventoClient, HttpEventoClient>(
+        client =>
+        {
+            client.BaseAddress = new Uri(
+                builder.Configuration["Services:Eventos:BaseUrl"]!
+            );
+
+            client.Timeout = TimeSpan.FromSeconds(5);
+        }
+    );
+}
+
+
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(
+            new JsonStringEnumConverter()
+        );
+    });
+    
+builder.Services.AddAuthorization();
 builder.Services.AddOpenApi();
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+builder.Services.AddProblemDetails();
 
 var allowedOrigins = builder.Configuration
     .GetSection("Cors:AllowedOrigins")
@@ -46,7 +97,6 @@ builder.Services.AddDbContext<DataContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection"))
 );
 
-GeradorDeServicos.ServiceProvider = builder.Services.BuildServiceProvider();
 
 var app = builder.Build();
 
@@ -68,6 +118,8 @@ app.UseForwardedHeaders(forwardedHeadersOptions);
 
 app.MapOpenApi();
 app.MapScalarApiReference();
+
+app.UseExceptionHandler();
 
 app.UseInternalApi();
 

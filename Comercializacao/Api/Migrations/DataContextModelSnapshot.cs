@@ -53,7 +53,10 @@ namespace Api.Migrations
                     b.Property<DateTimeOffset>("CriadoEm")
                         .HasColumnType("TEXT");
 
-                    b.Property<Guid>("EventoId")
+                    b.Property<Guid>("IdEvento")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("IdOrganizador")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Nome")
@@ -75,7 +78,9 @@ namespace Api.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("EventoId");
+                    b.HasIndex("IdEvento");
+
+                    b.HasIndex("IdOrganizador", "IdEvento");
 
                     b.ToTable("ofertas_ingresso", null, t =>
                         {

@@ -5,6 +5,7 @@ using Api.Application.Ports;
 using Api.Error;
 using Api.Infrastructure;
 using Api.Model;
+using Microsoft.EntityFrameworkCore;
 
 namespace Api.Application.Services;
 
@@ -41,13 +42,97 @@ public class OfertaIngressoService
                 "Você não tem permissão para adicionar ofertas de ingressos nesse evento."
             );
 
-        var oferta = _ofertaIngressoMapper.toEntity(request, evento.IdOrganizador);
+        var oferta = _ofertaIngressoMapper.ToEntity(request, evento.IdOrganizador);
 
         _dataContext.OfertasIngresso.Add(oferta);
 
         await _dataContext.SaveChangesAsync(cancellationToken);
 
-        return _ofertaIngressoMapper.toResponse(oferta);
+        return _ofertaIngressoMapper.ToResponse(oferta);
+    }
+
+    public async Task<OfertaIngressoResponse> Atualizar(
+        Guid idOferta,
+        AtualizarOfertaIngressoRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var oferta = await _dataContext.OfertasIngresso
+            .FirstOrDefaultAsync(
+                o => o.Id == idOferta,
+                cancellationToken
+            ) ?? throw new NotFoundException(
+                "Oferta não encontrada."
+            );
+
+        if (oferta.IdOrganizador != _usuarioAtual.GetId())
+            throw new DomainException(
+                "Você não tem permissão para atualizar essa oferta."
+            );
+
+        if (oferta.Status == StatusOfertaIngresso.ENCERRADA)
+            throw new DomainException(
+                "Não é permitido atualizar uma oferta encerrada."
+            );
+
+        if (string.IsNullOrWhiteSpace(request.Nome))
+            throw new DomainException(
+                "O nome da oferta é obrigatório."
+            );
+
+        if (request.PrecoUnitario < 0)
+            throw new DomainException(
+                "O preço unitário não pode ser negativo."
+            );
+
+        if (request.QuantidadeTotal <= 0)
+            throw new DomainException(
+                "A quantidade total deve ser maior que zero."
+            );
+
+        var quantidadeComprometida =
+            await ObterQuantidadeComprometida(
+                idOferta,
+                cancellationToken
+            );
+
+        if (request.QuantidadeTotal < quantidadeComprometida)
+            throw new DomainException(
+                $"A quantidade total não pode ser inferior aos " +
+                $"{quantidadeComprometida} ingressos comprometidos."
+            );
+
+        _ofertaIngressoMapper.ToUpdate(request, oferta);
+
+        await _dataContext.SaveChangesAsync(cancellationToken);
+
+        return _ofertaIngressoMapper.ToResponse(oferta, quantidadeComprometida);
+    }
+
+    protected async Task<OfertaIngresso> BuscarEntidadePorId(Guid IdOferta)
+    {
+
+        var oferta = await
+            _dataContext.OfertasIngresso
+                .Where(oi => oi.Id == IdOferta)
+                .FirstOrDefaultAsync() 
+            ?? 
+                throw new NotFoundException("Oferta não encontrada.");
+
+        return oferta;
+    }
+
+
+    protected async Task<int> ObterQuantidadeComprometida(
+        Guid idOferta,
+        CancellationToken cancellationToken)
+    {
+        return await _dataContext.Pedidos
+            .Where(p => p.OfertaId == idOferta)
+            .Where(Pedido.ComprometidosEm(DateTime.UtcNow))
+            .SumAsync(
+                p => (int?)p.Quantidade,
+                cancellationToken
+            ) ?? 0;
     }
 }
 

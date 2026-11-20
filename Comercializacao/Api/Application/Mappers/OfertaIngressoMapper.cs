@@ -5,9 +5,7 @@ namespace Api.Application.Mappers;
 
 public class OfertaIngressoMapper
 {
-    
-
-    public OfertaIngresso toEntity(CriarOfertaIngressoRequest request, Guid idOrganizador)
+    public OfertaIngresso ToEntity(CriarOfertaIngressoRequest request, Guid idOrganizador)
     {
         var ofertaIngresso = new OfertaIngresso(
             request.Nome,
@@ -20,7 +18,7 @@ public class OfertaIngressoMapper
         return ofertaIngresso;
     }
 
-    public OfertaIngressoResponse toResponse(OfertaIngresso entity)
+    public OfertaIngressoResponse ToResponse(OfertaIngresso entity, int quantidadeComprometida = 0)
     {
         return new OfertaIngressoResponse(
             Id: entity.Id,
@@ -28,9 +26,19 @@ public class OfertaIngressoMapper
             Nome: entity.Nome,
             PrecoUnitario: entity.Preco,
             QuantidadeTotal: entity.QuantidadeTotal,
-            QuantidadeDisponivel: entity.QuantidadeTotal,
+            QuantidadeDisponivel: entity.QuantidadeTotal - quantidadeComprometida,
             Status: entity.Status,
             CriadoEm: entity.CriadoEm
         );
+    }
+
+
+    public void ToUpdate(
+        AtualizarOfertaIngressoRequest request,
+        OfertaIngresso oferta)
+    {
+        oferta.Nome = request.Nome;
+        oferta.Preco = request.PrecoUnitario;
+        oferta.QuantidadeTotal = request.QuantidadeTotal;
     }
 }

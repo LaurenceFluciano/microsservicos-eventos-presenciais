@@ -113,10 +113,6 @@ public class DataContext : DbContext
                     "ValorUnitario >= 0"
                 );
 
-                table.HasCheckConstraint(
-                    "CK_Pedido_ValorTotal",
-                    "ValorTotal >= 0"
-                );
             });
 
             entity.HasKey(p => p.Id);
@@ -125,10 +121,6 @@ public class DataContext : DbContext
                 .IsRequired();
 
             entity.Property(p => p.ValorUnitario)
-                .HasPrecision(12, 2)
-                .IsRequired();
-
-            entity.Property(p => p.ValorTotal)
                 .HasPrecision(12, 2)
                 .IsRequired();
 

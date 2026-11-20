@@ -133,7 +133,7 @@ namespace Api.Migrations
                     b.Property<DateTimeOffset>("CriadoEm")
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTimeOffset?>("ExpiraEm")
+                    b.Property<DateTime?>("ExpiraEm")
                         .HasColumnType("TEXT");
 
                     b.Property<Guid>("OfertaId")
@@ -145,10 +145,6 @@ namespace Api.Migrations
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(30)
-                        .HasColumnType("TEXT");
-
-                    b.Property<decimal>("ValorTotal")
-                        .HasPrecision(12, 2)
                         .HasColumnType("TEXT");
 
                     b.Property<decimal>("ValorUnitario")
@@ -166,8 +162,6 @@ namespace Api.Migrations
                     b.ToTable("pedidos", null, t =>
                         {
                             t.HasCheckConstraint("CK_Pedido_Quantidade", "Quantidade > 0");
-
-                            t.HasCheckConstraint("CK_Pedido_ValorTotal", "ValorTotal >= 0");
 
                             t.HasCheckConstraint("CK_Pedido_ValorUnitario", "ValorUnitario >= 0");
                         });

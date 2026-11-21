@@ -29,8 +29,10 @@ public static class EventoMapper
         };
     }
 
-    public static EventoResponse ToEventoResponse(Evento evento)
+    public static EventoResponse ToEventoResponse(Evento evento, string? publicBaseUrl = null)
     {
+        var caminhoPublico = $"/api/eventos/publicado/{Uri.EscapeDataString(evento.SlugPublico)}";
+
         return new EventoResponse
         {
             Id = evento.Id,
@@ -47,8 +49,30 @@ public static class EventoMapper
             PublicadoEm = evento.PublicadoEm,
             PublicacaoEncerradaEm = evento.PublicacaoEncerradaEm,
             UrlEvento = evento.PublicadoEm.HasValue
-                ? $"http://localhost:8080/api/eventos/publicado/{evento.SlugPublico}"
+                ? string.IsNullOrWhiteSpace(publicBaseUrl)
+                    ? caminhoPublico
+                    : $"{publicBaseUrl.TrimEnd('/')}{caminhoPublico}"
                 : null
+        };
+    }
+
+    public static ResumoEventoResponse ToResumoResponse(
+        Evento evento,
+        string? publicBaseUrl = null)
+    {
+        var detalhe = ToEventoResponse(evento, publicBaseUrl);
+
+        return new ResumoEventoResponse
+        {
+            Id = detalhe.Id,
+            Nome = detalhe.Nome,
+            Local = detalhe.Local,
+            Slug = detalhe.Slug,
+            Inicio = detalhe.Inicio,
+            Fim = detalhe.Fim,
+            Status = detalhe.Status,
+            StatusPublicacao = detalhe.StatusPublicacao,
+            UrlEvento = detalhe.UrlEvento
         };
     }
 

@@ -2,10 +2,10 @@
 
 #nullable disable
 
-namespace Api.Migrations
+namespace Usuario.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class CriarTabelaUsuario : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

@@ -1,10 +1,8 @@
-using System.Security.Claims;
 using Api.Application.Services;
 using Api.Application.DTO;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Api.Error;
-using Microsoft.AspNetCore.Http.HttpResults;
 
 
 
@@ -17,10 +15,12 @@ public class EventosController : ControllerBase
 {
 
     public EventoService EventoService;
+    private readonly IConfiguration _configuracao;
 
-    public EventosController(EventoService eventoService)
+    public EventosController(EventoService eventoService, IConfiguration configuracao)
     {
         EventoService = eventoService;
+        _configuracao = configuracao;
     }
 
     [HttpPost]
@@ -68,7 +68,13 @@ public class EventosController : ControllerBase
     {
         try
         {
-            var resultado = await EventoService.Publicar(id);
+            // Configuravel por Eventos__PublicBaseUrl. Sem configuracao,
+            // utiliza o esquema, host, porta e PathBase da requisicao.
+            var baseUrl = _configuracao["Eventos:PublicBaseUrl"];
+            if (string.IsNullOrWhiteSpace(baseUrl))
+                baseUrl = $"{Request.Scheme}://{Request.Host}{Request.PathBase}";
+
+            var resultado = await EventoService.Publicar(id, publicBaseUrl: baseUrl);
             return Ok(resultado);
         }
         catch (KeyNotFoundException exception)
@@ -89,18 +95,58 @@ public class EventosController : ControllerBase
         }
     }
 
-    [HttpGet("meus")]
-    public IActionResult MeusEventos()
+    private string ObterBaseUrlPublica()
     {
-        var usuarioId = User.FindFirstValue(
-            ClaimTypes.NameIdentifier
-        );
+        var configurada = _configuracao["Eventos:PublicBaseUrl"];
+        return !string.IsNullOrWhiteSpace(configurada)
+            ? configurada
+            : $"{Request.Scheme}://{Request.Host}{Request.PathBase}";
+    }
 
-        return Ok(new
+    [HttpGet("meus")]
+    public async Task<IActionResult> MeusEventos(
+        [FromQuery] string ordem = "asc",
+        [FromQuery] bool? publicado = null,
+        CancellationToken cancellationToken = default)
+    {
+        try
         {
-            UsuarioId = usuarioId,
-            Mensagem = "Usuário autenticado!"
-        });
+            var eventos = await EventoService.ListarMeus(
+                ordem,
+                publicado,
+                cancellationToken,
+                ObterBaseUrlPublica());
+
+            return Ok(eventos);
+        }
+        catch (ArgumentException exception)
+        {
+            return BadRequest(exception.Message);
+        }
+    }
+
+    [HttpGet("meus/{id:guid}")]
+    public async Task<IActionResult> ConsultarMeu(
+        Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var evento = await EventoService.ConsultarMeu(
+                id,
+                cancellationToken,
+                ObterBaseUrlPublica());
+
+            return Ok(evento);
+        }
+        catch (KeyNotFoundException exception)
+        {
+            return NotFound(exception.Message);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Forbid();
+        }
     }
 
 

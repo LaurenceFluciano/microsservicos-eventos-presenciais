@@ -95,9 +95,64 @@ public class EventoService
         return EventoMapper.ToDetalheResponse(evento);
     }
 
+    // Lista somente os eventos pertencentes ao organizador autenticado.
+    // Filtros e ordenacao sao executados pelo banco de dados.
+    public async Task<IReadOnlyList<ResumoEventoResponse>> ListarMeus(
+        string? ordem = "asc",
+        bool? publicado = null,
+        CancellationToken cancellationToken = default,
+        string? publicBaseUrl = null)
+    {
+        if (!string.Equals(ordem, "asc", StringComparison.OrdinalIgnoreCase) &&
+            !string.Equals(ordem, "desc", StringComparison.OrdinalIgnoreCase))
+            throw new ArgumentException("A ordem deve ser 'asc' ou 'desc'.", nameof(ordem));
+
+        var organizadorId = _usuarioAtual.GetId();
+
+        IQueryable<Evento> consulta = _dataContext.Set<Evento>()
+            .AsNoTracking()
+            .Where(e => e.OrganizadorId == organizadorId);
+
+        if (publicado.HasValue)
+            consulta = publicado.Value
+                ? consulta.Where(e => e.PublicadoEm != null)
+                : consulta.Where(e => e.PublicadoEm == null);
+
+        consulta = string.Equals(ordem, "desc", StringComparison.OrdinalIgnoreCase)
+            ? consulta.OrderByDescending(e => e.Inicio).ThenBy(e => e.Id)
+            : consulta.OrderBy(e => e.Inicio).ThenBy(e => e.Id);
+
+        var eventos = await consulta.ToListAsync(cancellationToken);
+
+        return eventos
+            .Select(e => EventoMapper.ToResumoResponse(e, publicBaseUrl))
+            .ToList();
+    }
+
+    public async Task<EventoResponse> ConsultarMeu(
+        Guid id,
+        CancellationToken cancellationToken = default,
+        string? publicBaseUrl = null)
+    {
+        var organizadorId = _usuarioAtual.GetId();
+        var evento = await _dataContext.Set<Evento>()
+            .AsNoTracking()
+            .SingleOrDefaultAsync(e => e.Id == id, cancellationToken);
+
+        if (evento is null)
+            throw new KeyNotFoundException("Evento nao encontrado.");
+
+        if (evento.OrganizadorId != organizadorId)
+            throw new UnauthorizedAccessException(
+                "Apenas o organizador pode consultar este evento.");
+
+        return EventoMapper.ToEventoResponse(evento, publicBaseUrl);
+    }
+
     public async Task<EventoResponse> Publicar(
         Guid id,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        string? publicBaseUrl = null)
     {
         var organizadorId = _usuarioAtual.GetId();
         var evento = await _dataContext.Set<Evento>()
@@ -112,7 +167,7 @@ public class EventoService
 
         // Publicacao repetida e idempotente: nao consulta Comercializacao novamente.
         if (evento.PublicadoEm.HasValue)
-            return EventoMapper.ToEventoResponse(evento);
+            return EventoMapper.ToEventoResponse(evento, publicBaseUrl);
 
         if (_comercializacaoClient is null)
             throw new InvalidOperationException(
@@ -136,6 +191,6 @@ public class EventoService
 
         evento.Publicar();
         await _dataContext.SaveChangesAsync(cancellationToken);
-        return EventoMapper.ToEventoResponse(evento);
+        return EventoMapper.ToEventoResponse(evento, publicBaseUrl);
     }
 }

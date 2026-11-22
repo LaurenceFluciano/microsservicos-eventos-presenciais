@@ -4,5 +4,6 @@ public sealed record EventoClientResponse
 (
     Guid IdEvento,
     Guid IdOrganizador,
-    string Nome
+    string Nome,
+    bool EstaPublicado
 );

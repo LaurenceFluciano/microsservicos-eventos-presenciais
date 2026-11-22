@@ -26,4 +26,20 @@ public class OfertaIngressoController : ControllerBase
 
         return Ok(response);
     }
+
+
+    [HttpPatch("{idOferta:guid}")]
+    public async Task<IActionResult> Atualizar(
+        [FromRoute] Guid idOferta,
+        [FromBody] AtualizarOfertaIngressoRequest request,
+        CancellationToken cancellationToken)
+    {
+        var response = await _ofertaIngressoService.Atualizar(
+            idOferta,
+            request,
+            cancellationToken
+        );
+
+        return Ok(response);
+    }
 }

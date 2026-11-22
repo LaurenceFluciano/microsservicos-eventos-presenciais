@@ -15,6 +15,8 @@ public class DataContext : DbContext
     public DbSet<OfertaIngresso> OfertasIngresso => Set<OfertaIngresso>();
     public DbSet<Pedido> Pedidos => Set<Pedido>();
     public DbSet<Pagamento> Pagamentos => Set<Pagamento>();
+    public DbSet<PagamentoTentativa> PagamentoTentativas =>
+        Set<PagamentoTentativa>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -113,10 +115,6 @@ public class DataContext : DbContext
                     "ValorUnitario >= 0"
                 );
 
-                table.HasCheckConstraint(
-                    "CK_Pedido_ValorTotal",
-                    "ValorTotal >= 0"
-                );
             });
 
             entity.HasKey(p => p.Id);
@@ -125,10 +123,6 @@ public class DataContext : DbContext
                 .IsRequired();
 
             entity.Property(p => p.ValorUnitario)
-                .HasPrecision(12, 2)
-                .IsRequired();
-
-            entity.Property(p => p.ValorTotal)
                 .HasPrecision(12, 2)
                 .IsRequired();
 
@@ -155,11 +149,15 @@ public class DataContext : DbContext
         // PAGAMENTO
         // ========================================
 
+                
         modelBuilder.Entity<Pagamento>(entity =>
         {
             entity.ToTable("pagamentos");
 
             entity.HasKey(p => p.Id);
+
+            entity.Property(p => p.PedidoId)
+                .IsRequired();
 
             entity.Property(p => p.Valor)
                 .HasPrecision(12, 2)
@@ -170,15 +168,65 @@ public class DataContext : DbContext
                 .HasMaxLength(30)
                 .IsRequired();
 
+            // Identificação da cobrança externa
+            entity.Property(p => p.IdExterno)
+                .HasMaxLength(255)
+                .IsRequired();
+
+            entity.Property(p => p.UrlCheckout)
+                .HasMaxLength(2048)
+                .IsRequired();
+
+            // Datas
             entity.Property(p => p.CriadoEm)
                 .IsRequired();
 
+            entity.Property(p => p.CobrancaGeradaEm)
+                .IsRequired(false);
+
+            entity.Property(p => p.DataConfirmacao)
+                .IsRequired(false);
+
+            // Relacionamentos
             entity.HasOne(p => p.Pedido)
                 .WithMany(pedido => pedido.Pagamentos)
                 .HasForeignKey(p => p.PedidoId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            // Índices
             entity.HasIndex(p => p.PedidoId);
+
+            entity.HasIndex(p => p.IdExterno)
+                .IsUnique()
+                .HasFilter("\"IdExterno\" <> ''");
         });
+
+
+
+        modelBuilder.Entity<PagamentoTentativa>(entity =>
+        {
+            entity.ToTable("pagamento_tentativas");
+
+            entity.HasKey(t => t.Id);
+
+            entity.Property(t => t.Status)
+                .HasConversion<string>()
+                .IsRequired();
+
+            entity.Property(t => t.TentadoEm)
+                .IsRequired();
+
+            entity.HasOne<Pagamento>()
+                .WithMany()
+                .HasForeignKey(t => t.PagamentoId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(t => new
+            {
+                t.PagamentoId,
+                t.TentadoEm
+            });
+        });
+
     }
 }

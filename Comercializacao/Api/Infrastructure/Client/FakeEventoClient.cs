@@ -26,7 +26,8 @@ public class FakeEventoClient : IEventoClient
             new EventoClientResponse(
                 _idEvento,
                 _idOrganizador,
-                "Evento Exemplo Fake"
+                "Evento Exemplo Fake",
+                true
             )
         );
     }

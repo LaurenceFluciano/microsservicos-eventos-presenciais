@@ -1,7 +1,7 @@
 using Api.Error;
 using Api.Model;
 
-namespace Api.Tests.Model;
+namespace Tests.Model;
 
 public class OfertaIngressoTest
 {

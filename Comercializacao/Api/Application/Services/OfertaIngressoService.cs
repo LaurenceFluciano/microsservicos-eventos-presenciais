@@ -108,7 +108,7 @@ public class OfertaIngressoService
         return _ofertaIngressoMapper.ToResponse(oferta, quantidadeComprometida);
     }
 
-    protected async Task<OfertaIngresso> BuscarEntidadePorId(Guid IdOferta)
+    public async Task<OfertaIngresso> BuscarEntidadePorId(Guid IdOferta)
     {
 
         var oferta = await
@@ -122,7 +122,7 @@ public class OfertaIngressoService
     }
 
 
-    protected async Task<int> ObterQuantidadeComprometida(
+    public async Task<int> ObterQuantidadeComprometida(
         Guid idOferta,
         CancellationToken cancellationToken)
     {

@@ -4,14 +4,14 @@ using Api.Application.Mappers;
 using Api.Application.Ports;
 using Api.Application.Services;
 using Api.Infrastructure;
+using Api;
 using Api.Model;
 using Api.Error;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Moq;
-using Xunit;
 
-namespace Api.Tests.Application.Services;
+namespace Tests.Application.Services;
 
 public class OfertaIngressoServiceTest : IDisposable
 {
@@ -507,7 +507,7 @@ public class OfertaIngressoServiceTest : IDisposable
 
         await CriarPedido(
             oferta.Id,
-            StatusPedido.PAGO,
+            StatusPedido.CONFIRMADO,
             quantidade: 40
         );
 
@@ -545,7 +545,7 @@ public class OfertaIngressoServiceTest : IDisposable
 
         await CriarPedido(
             oferta.Id,
-            StatusPedido.PAGO,
+            StatusPedido.CONFIRMADO,
             quantidade: 40
         );
 
@@ -587,7 +587,7 @@ public class OfertaIngressoServiceTest : IDisposable
 
         await CriarPedido(
             oferta.Id,
-            StatusPedido.PAGO,
+            StatusPedido.CONFIRMADO,
             quantidade: 40
         );
 
@@ -638,7 +638,7 @@ public class OfertaIngressoServiceTest : IDisposable
 
         var pedidoPago = await CriarPedido(
             oferta.Id,
-            StatusPedido.PAGO,
+            StatusPedido.CONFIRMADO,
             quantidade: 2,
             valorUnitario: 150m
         );
@@ -735,7 +735,7 @@ public class OfertaIngressoServiceTest : IDisposable
 
         await CriarPedido(
             oferta.Id,
-            StatusPedido.PAGO,
+            StatusPedido.CONFIRMADO,
             quantidade: 40
         );
 
@@ -817,7 +817,7 @@ public class OfertaIngressoServiceTest : IDisposable
 
         await CriarPedido(
             oferta.Id,
-            StatusPedido.PAGO,
+            StatusPedido.CONFIRMADO,
             quantidade: 20
         );
 
@@ -861,7 +861,7 @@ public class OfertaIngressoServiceTest : IDisposable
 
         await CriarPedido(
             oferta.Id,
-            StatusPedido.PAGO,
+            StatusPedido.CONFIRMADO,
             quantidade: 20
         );
 
@@ -900,7 +900,7 @@ public class OfertaIngressoServiceTest : IDisposable
 
         await CriarPedido(
             oferta.Id,
-            StatusPedido.PAGO,
+            StatusPedido.CONFIRMADO,
             quantidade: 80
         );
 
@@ -953,7 +953,8 @@ public class OfertaIngressoServiceTest : IDisposable
                 new EventoClientResponse(
                     _idEvento,
                     idOrganizador,
-                    "Evento Exemplo"
+                    "Evento Exemplo",
+                    false
                 )
             );
     }
@@ -965,20 +966,25 @@ public class OfertaIngressoServiceTest : IDisposable
         decimal valorUnitario = 150m,
         DateTime? expiraEm = null)
     {
-        var pedido = new Pedido
-        {
-            CompradorId = Guid.CreateVersion7(),
-            OfertaId = ofertaId,
-            Quantidade = quantidade,
-            ValorUnitario = valorUnitario,
-            ExpiraEm = expiraEm
-        };
-
-        _dataContext.Entry(pedido)
-            .Property(p => p.Status)
-            .CurrentValue = status;
+        var pedido = new Pedido(
+            idOferta: ofertaId,
+            idComprador: Guid.CreateVersion7(),
+            quantidade: quantidade,
+            valorUnitario: valorUnitario
+        );
 
         _dataContext.Pedidos.Add(pedido);
+
+        var entry = _dataContext.Entry(pedido);
+
+        entry.Property(p => p.Status).CurrentValue = status;
+
+        if (expiraEm.HasValue)
+        {
+            entry.Property(p => p.ExpiraEm)
+                .CurrentValue = expiraEm.Value;
+        }
+
         await _dataContext.SaveChangesAsync();
 
         return pedido;

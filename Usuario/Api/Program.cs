@@ -1,5 +1,5 @@
 
-using AppTemplate;
+using Api;
 using Api.Autenticacao;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;

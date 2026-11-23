@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Usuario.Models;
 
-namespace AppTemplate
+namespace Api
 {
     public class DataContext : DbContext
     {

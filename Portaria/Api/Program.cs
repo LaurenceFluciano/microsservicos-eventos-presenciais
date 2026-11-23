@@ -1,64 +1,153 @@
-<<<<<<< HEAD:Usuario/Usuario/Program.cs
-using AppTemplate;
+
+using System.Security.Cryptography;
+
+using Api;
+using Api.Application.Ports;
+using Api.Application.Services;
+using Api.Infrastructure.Authentication;
+using Api.Application.Mappers;
+
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpOverrides;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+
 using Scalar.AspNetCore;
-using Usuario.Autenticacao;
-using Usuario.Models;
-using Usuario.Servicos;
+using Api.Infrastructure.Client;
 
 var builder = WebApplication.CreateBuilder(args);
 
-if (string.IsNullOrWhiteSpace(builder.Configuration["Authentication:ApiKey"]))
+#region Configurações obrigatórias
+
+var apiKey = builder.Configuration["Authentication:ApiKey"];
+
+if (string.IsNullOrWhiteSpace(apiKey))
 {
     throw new InvalidOperationException(
-        "Configure Authentication:ApiKey antes de iniciar o servi�o.");
+        "Configure Authentication:ApiKey.");
 }
 
-// Add services to the container.
+var jwtIssuer = builder.Configuration["Jwt:Issuer"];
+
+if (string.IsNullOrWhiteSpace(jwtIssuer))
+{
+    throw new InvalidOperationException(
+        "Configure Jwt:Issuer.");
+}
+
+var jwtAudience = builder.Configuration["Jwt:Audience"];
+
+if (string.IsNullOrWhiteSpace(jwtAudience))
+{
+    throw new InvalidOperationException(
+        "Configure Jwt:Audience.");
+}
+
+var publicKeyPem = builder.Configuration["Jwt:PublicKeyPem"];
+
+if (string.IsNullOrWhiteSpace(publicKeyPem))
+{
+    throw new InvalidOperationException(
+        "Configure Jwt:PublicKeyPem.");
+}
+
+#endregion
+
+#region Chave pública RSA
+
+var publicRsa = RSA.Create();
+
+try
+{
+    publicRsa.ImportFromPem(publicKeyPem);
+
+    if (publicRsa.KeySize < 2048)
+    {
+        throw new InvalidOperationException(
+            "A chave RSA precisa ter pelo menos 2048 bits.");
+    }
+}
+catch
+{
+    publicRsa.Dispose();
+    throw;
+}
+
+var rsaSecurityKey = new RsaSecurityKey(publicRsa);
+
+#endregion
+
+#region Controllers
 
 builder.Services.AddControllers();
-builder.Services.AddScoped<IPasswordHasher<ContaModel>, PasswordHasher<ContaModel>>();
-builder.Services.AddScoped<TokenVerificacaoEmailService>();
-builder.Services.AddScoped<CadastroContaService>();
-builder.Services.AddScoped<AuthService>();
-builder.Services.AddScoped<UsuarioServ>();
+builder.Services.AddOpenApi();
+
+#endregion
+
+#region Serviços da aplicação
+
 builder.Services.AddHttpContextAccessor();
-builder.Services.AddScoped<IUsuarioAtual, UsuarioAtual>();
 
-var tokenJwtService = new TokenJwtService(builder.Configuration);
-builder.Services.AddSingleton<ITokenJwtService>(tokenJwtService);
+builder.Services.AddScoped<IUsuarioAtual, UsuarioAtualHttp>();
+
+builder.Services.AddScoped<PortariaService>();
+
+#endregion
 
 
+#region Mappers
 
-if (builder.Environment.IsDevelopment())
-{
-    builder.Services.AddSingleton<IEmailSender, FakeEmailSender>();
-}
-else
-{
-    builder.Services.AddSingleton<IEmailSender, EmailSenderNotConfigured>();
-}
+builder.Services.AddScoped<PortariaMapper>();
+
+#endregion
+
+#region Autenticação
 
 builder.Services
-    .AddAuthentication(options =>
-    {
-        options.DefaultAuthenticateScheme =
-            ApiKeyAuthenticationHandler.SchemeName;
-        options.DefaultChallengeScheme =
-            ApiKeyAuthenticationHandler.SchemeName;
-    })
-    .AddScheme<AuthenticationSchemeOptions, ApiKeyAuthenticationHandler>(
+    .AddAuthentication(
+        JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(
+        JwtBearerDefaults.AuthenticationScheme,
+        options =>
+        {
+            options.MapInboundClaims = false;
+
+            options.TokenValidationParameters =
+                new TokenValidationParameters
+                {
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = rsaSecurityKey,
+
+                    ValidAlgorithms =
+                    [
+                        SecurityAlgorithms.RsaSha256
+                    ],
+
+                    ValidateIssuer = true,
+                    ValidIssuer = jwtIssuer,
+
+                    ValidateAudience = true,
+                    ValidAudience = jwtAudience,
+
+                    ValidateLifetime = true,
+                    RequireExpirationTime = true,
+                    RequireSignedTokens = true,
+
+                    ClockSkew = TimeSpan.FromSeconds(30),
+
+                    NameClaimType = "sub"
+                };
+        })
+    .AddScheme<
+        AuthenticationSchemeOptions,
+        ApiKeyAuthenticationHandler>(
         ApiKeyAuthenticationHandler.SchemeName,
-        _ => { })
-    .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
-    {
-        options.MapInboundClaims = false;
-        options.TokenValidationParameters = tokenJwtService.CriarParametrosValidacao();
-    });
+        _ => { });
+
+#endregion
+
+#region Autorização
 
 builder.Services.AddAuthorization(options =>
 {
@@ -66,17 +155,47 @@ builder.Services.AddAuthorization(options =>
     {
         policy.AddAuthenticationSchemes(
             ApiKeyAuthenticationHandler.SchemeName);
+
         policy.RequireAuthenticatedUser();
     });
 
     options.AddPolicy("UserJwt", policy =>
     {
-        policy.AddAuthenticationSchemes(JwtBearerDefaults.AuthenticationScheme);
+        policy.AddAuthenticationSchemes(
+            JwtBearerDefaults.AuthenticationScheme);
+
         policy.RequireAuthenticatedUser();
     });
 });
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+
+#endregion
+
+
+#region CLIENTES HTTP
+
+builder.Services.AddTransient<InternalApiKeyHandler>();
+
+builder.Services
+    .AddHttpClient<
+        IComercializacaoClient,
+        HttpComercializacaoClient>(
+        client =>
+        {
+            client.BaseAddress = new Uri(
+                builder.Configuration[
+                    "Services:Comercializacao:BaseUrl"
+                ] ?? throw new InvalidOperationException(
+                    "URL de Comercialização não configurada.")
+            );
+
+            client.Timeout = TimeSpan.FromSeconds(5);
+        })
+    .AddHttpMessageHandler<InternalApiKeyHandler>();
+
+#endregion
+
+
+#region CORS
 
 var allowedOrigins = builder.Configuration
     .GetSection("Cors:AllowedOrigins")
@@ -88,41 +207,79 @@ builder.Services.AddCors(options =>
     {
         if (allowedOrigins.Length > 0)
         {
-            policy.WithOrigins(allowedOrigins)
+            policy
+                .WithOrigins(allowedOrigins)
                 .AllowAnyHeader()
                 .AllowAnyMethod();
         }
     });
 });
 
+#endregion
+
+#region Banco de dados
+
 builder.Services.AddDbContext<DataContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection"))
+    options.UseSqlite(
+        builder.Configuration.GetConnectionString(
+            "DefaultConnection")
+    )
 );
+
+#endregion
+
+#region Build
 
 var app = builder.Build();
 
+app.Lifetime.ApplicationStopped.Register(
+    publicRsa.Dispose);
+
+#endregion
+
+#region Migrations
+
 using (var scope = app.Services.CreateScope())
 {
-    var dataContext = scope.ServiceProvider.GetRequiredService<DataContext>();
+    var dataContext = scope.ServiceProvider
+        .GetRequiredService<DataContext>();
+
     dataContext.Database.Migrate();
 }
 
-var forwardedHeadersOptions = new ForwardedHeadersOptions
-{
-    ForwardedHeaders = ForwardedHeaders.XForwardedFor |
-                       ForwardedHeaders.XForwardedProto
-};
+#endregion
 
-forwardedHeadersOptions.KnownIPNetworks.Clear();
-forwardedHeadersOptions.KnownProxies.Clear();
+#region Forwarded Headers
+
+var forwardedHeadersOptions =
+    new ForwardedHeadersOptions
+    {
+        ForwardedHeaders =
+            ForwardedHeaders.XForwardedFor |
+            ForwardedHeaders.XForwardedProto
+    };
+
 app.UseForwardedHeaders(forwardedHeadersOptions);
 
-app.MapOpenApi();
-app.MapScalarApiReference();
+#endregion
 
-app.UseCors();
+#region Documentação
+
+if (app.Environment.IsDevelopment())
+{
+    app.MapOpenApi();
+    app.MapScalarApiReference();
+}
+
+#endregion
+
+#region Pipeline HTTP
 
 app.UseHttpsRedirection();
+
+app.UseRouting();
+
+app.UseCors();
 
 app.UseAuthentication();
 
@@ -131,86 +288,5 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
-=======
-using Api;
-using Api.Infra;
-using Api.Config;
-using Api.Middlewares;
-using Microsoft.AspNetCore.HttpOverrides;
-using Microsoft.EntityFrameworkCore;
-using Scalar.AspNetCore;
 
-var builder = WebApplication.CreateBuilder(args);
-
-// Add services to the container.
-
-builder.Services.AddOptions<InternalApiConfig>()
-    .Bind(
-        builder.Configuration.GetSection(
-            InternalApiConfig.SectionName
-        )
-    )
-    .Validate(config => string.IsNullOrWhiteSpace(config.ApiKey), "InternalApi:ApiKey é obrigatório para a inicialização.")
-    .ValidateOnStart();
-
-
-builder.Services.AddControllers();
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
-
-var allowedOrigins = builder.Configuration
-    .GetSection("Cors:AllowedOrigins")
-    .Get<string[]>() ?? [];
-
-builder.Services.AddCors(options =>
-{
-    options.AddDefaultPolicy(policy =>
-    {
-        if (allowedOrigins.Length > 0)
-        {
-            policy.WithOrigins(allowedOrigins)
-                .AllowAnyHeader()
-                .AllowAnyMethod();
-        }
-    });
-});
-
-builder.Services.AddDbContext<DataContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection"))
-);
-
-GeradorDeServicos.ServiceProvider = builder.Services.BuildServiceProvider();
-
-var app = builder.Build();
-
-using (var scope = app.Services.CreateScope())
-{
-    var dataContext = scope.ServiceProvider.GetRequiredService<DataContext>();
-    dataContext.Database.Migrate();
-}
-
-var forwardedHeadersOptions = new ForwardedHeadersOptions
-{
-    ForwardedHeaders = ForwardedHeaders.XForwardedFor |
-                       ForwardedHeaders.XForwardedProto
-};
-
-forwardedHeadersOptions.KnownIPNetworks.Clear();
-forwardedHeadersOptions.KnownProxies.Clear();
-app.UseForwardedHeaders(forwardedHeadersOptions);
-
-app.MapOpenApi();
-app.MapScalarApiReference();
-
-app.UseInternalApi();
-
-app.UseCors();
-
-app.UseHttpsRedirection();
-
-app.UseAuthorization();
-
-app.MapControllers();
-
-app.Run();
->>>>>>> b10ac8b42c804404f5da7fafe61db92870d071e5:Portaria/Api/Program.cs
+#endregion

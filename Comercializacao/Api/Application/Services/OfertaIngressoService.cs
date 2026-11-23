@@ -37,12 +37,12 @@ public class OfertaIngressoService
             cancellationToken
         );
 
-        if (evento.IdOrganizador != _usuarioAtual.GetId())
+        if (evento.OrganizadorId != _usuarioAtual.GetId())
             throw new DomainException(
                 "Você não tem permissão para adicionar ofertas de ingressos nesse evento."
             );
 
-        var oferta = _ofertaIngressoMapper.ToEntity(request, evento.IdOrganizador);
+        var oferta = _ofertaIngressoMapper.ToEntity(request, evento.OrganizadorId);
 
         _dataContext.OfertasIngresso.Add(oferta);
 
@@ -134,5 +134,168 @@ public class OfertaIngressoService
                 cancellationToken
             ) ?? 0;
     }
+
+
+
+    public async Task<ConsultarOfertasEventoResponse> ConsultarOfertasPorEventoPublicadoAsync(
+        Guid idEvento,
+        CancellationToken cancellationToken = default)
+    {
+        var evento = await _eventoClient.ObterEventoAsync(
+            idEvento,
+            cancellationToken
+        );
+
+        if (!evento.EstaPublicado)
+        {
+            throw new NotFoundException(
+                "Evento publicado não encontrado.");
+        }
+
+        var ofertas = await _dataContext.OfertasIngresso
+            .AsNoTracking()
+            .Where(o => o.IdEvento == idEvento)
+            .Where(o => o.Status == StatusOfertaIngresso.ATIVA)
+            .OrderBy(o => o.Preco)
+            .ThenBy(o => o.Id)
+            .ToListAsync(cancellationToken);
+
+
+        var idsOfertas = ofertas
+            .Select(o => o.Id)
+            .ToArray();
+
+        var agora = DateTime.UtcNow;
+
+        var quantidadesComprometidas = await _dataContext.Pedidos
+            .AsNoTracking()
+            .Where(p => idsOfertas.Contains(p.OfertaId))
+            .Where(Pedido.ComprometidosEm(agora))
+            .GroupBy(p => p.OfertaId)
+            .Select(g => new
+            {
+                OfertaId = g.Key,
+                Quantidade = g.Sum(p => p.Quantidade)
+            })
+            .ToDictionaryAsync(
+                x => x.OfertaId,
+                x => x.Quantidade,
+                cancellationToken
+            );
+
+
+        var ofertasResponse = ofertas
+            .Select(oferta =>
+            {
+                quantidadesComprometidas.TryGetValue(
+                    oferta.Id,
+                    out var quantidadeComprometida
+                );
+
+                return _ofertaIngressoMapper.ToResponse(
+                    oferta,
+                    quantidadeComprometida
+                );
+            })
+            .ToList();
+
+        return new ConsultarOfertasEventoResponse(
+            evento.Id,
+            evento.Nome,
+            evento.Inicio,
+            evento.Fim,
+            ofertasResponse
+        );
+    }
+
+      public async Task<ConsultarOfertasEventoResponse> ConsultarOfertasDoMeuEventoAsync(
+        Guid idEvento,
+        CancellationToken cancellationToken = default)
+    {
+        var evento = await _eventoClient.ObterEventoAsync(
+            idEvento,
+            cancellationToken
+        );
+
+
+        var idUsuarioAtual = _usuarioAtual.GetId();
+
+        if (evento.OrganizadorId != idUsuarioAtual)
+        {
+            throw new NotFoundException("Evento não encontrado.");
+        }
+
+        var ofertas = await _dataContext.OfertasIngresso
+            .AsNoTracking()
+            .Where(o => o.IdEvento == idEvento)
+            .Where(o => o.Status == StatusOfertaIngresso.ATIVA)
+            .OrderBy(o => o.Preco)
+            .ThenBy(o => o.Id)
+            .ToListAsync(cancellationToken);
+
+
+
+        var idsOfertas = ofertas
+            .Select(o => o.Id)
+            .ToArray();
+
+        var agora = DateTime.UtcNow;
+
+        var quantidadesComprometidas = await _dataContext.Pedidos
+            .AsNoTracking()
+            .Where(p => idsOfertas.Contains(p.OfertaId))
+            .Where(Pedido.ComprometidosEm(agora))
+            .GroupBy(p => p.OfertaId)
+            .Select(g => new
+            {
+                OfertaId = g.Key,
+                Quantidade = g.Sum(p => p.Quantidade)
+            })
+            .ToDictionaryAsync(
+                x => x.OfertaId,
+                x => x.Quantidade,
+                cancellationToken
+            );
+
+
+        var ofertasResponse = ofertas
+            .Select(oferta =>
+            {
+                quantidadesComprometidas.TryGetValue(
+                    oferta.Id,
+                    out var quantidadeComprometida
+                );
+
+                return _ofertaIngressoMapper.ToResponse(
+                    oferta,
+                    quantidadeComprometida
+                );
+            })
+            .ToList();
+
+        return new ConsultarOfertasEventoResponse(
+            evento.Id,
+            evento.Nome,
+            evento.Inicio,
+            evento.Fim,
+            ofertasResponse
+        );
+    }
+
+    public async Task<bool> PossuiOfertaValidaAsync(
+        Guid eventoId,
+        CancellationToken cancellationToken = default)
+    {
+        return await _dataContext.OfertasIngresso
+            .AsNoTracking()
+            .AnyAsync(
+                oferta =>
+                    oferta.IdEvento == eventoId &&
+                    oferta.Status == StatusOfertaIngresso.ATIVA &&
+                    oferta.QuantidadeTotal > 0,
+                cancellationToken
+            );
+    }
+
 }
 

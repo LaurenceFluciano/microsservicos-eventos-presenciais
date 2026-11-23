@@ -28,7 +28,7 @@ namespace Api.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTimeOffset>("EmitidoEm")
+                    b.Property<DateTime>("EmitidoEm")
                         .HasColumnType("TEXT");
 
                     b.Property<Guid>("PedidoId")
@@ -96,10 +96,18 @@ namespace Api.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
+                    b.Property<DateTime?>("CobrancaGeradaEm")
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTimeOffset>("CriadoEm")
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTimeOffset?>("DataPagamento")
+                    b.Property<DateTime?>("DataConfirmacao")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("IdExterno")
+                        .IsRequired()
+                        .HasMaxLength(255)
                         .HasColumnType("TEXT");
 
                     b.Property<Guid>("PedidoId")
@@ -110,15 +118,47 @@ namespace Api.Migrations
                         .HasMaxLength(30)
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("UrlCheckout")
+                        .IsRequired()
+                        .HasMaxLength(2048)
+                        .HasColumnType("TEXT");
+
                     b.Property<decimal>("Valor")
                         .HasPrecision(12, 2)
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
 
+                    b.HasIndex("IdExterno")
+                        .IsUnique()
+                        .HasFilter("\"IdExterno\" <> ''");
+
                     b.HasIndex("PedidoId");
 
                     b.ToTable("pagamentos", (string)null);
+                });
+
+            modelBuilder.Entity("Api.Model.PagamentoTentativa", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("PagamentoId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("TentadoEm")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PagamentoId", "TentadoEm");
+
+                    b.ToTable("pagamento_tentativas", (string)null);
                 });
 
             modelBuilder.Entity("Api.Model.Pedido", b =>
@@ -133,7 +173,7 @@ namespace Api.Migrations
                     b.Property<DateTimeOffset>("CriadoEm")
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTime?>("ExpiraEm")
+                    b.Property<DateTime>("ExpiraEm")
                         .HasColumnType("TEXT");
 
                     b.Property<Guid>("OfertaId")
@@ -187,6 +227,15 @@ namespace Api.Migrations
                         .IsRequired();
 
                     b.Navigation("Pedido");
+                });
+
+            modelBuilder.Entity("Api.Model.PagamentoTentativa", b =>
+                {
+                    b.HasOne("Api.Model.Pagamento", null)
+                        .WithMany()
+                        .HasForeignKey("PagamentoId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Api.Model.Pedido", b =>

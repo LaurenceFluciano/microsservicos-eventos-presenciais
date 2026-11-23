@@ -3,6 +3,8 @@ using Api.Application.DTO;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Api.Error;
+using Api.Attributes;
+using Microsoft.AspNetCore.Http.HttpResults;
 
 
 
@@ -10,7 +12,6 @@ namespace Api.Controllers;
 
 [ApiController]
 [Route("api/eventos")]
-[Authorize]
 public class EventosController : ControllerBase
 {
 
@@ -24,6 +25,7 @@ public class EventosController : ControllerBase
     }
 
     [HttpPost]
+    [UserJwt]
     public async Task<IActionResult> Criar(
         [FromBody] CriarEventoRequest request)
     {
@@ -40,6 +42,7 @@ public class EventosController : ControllerBase
     }
 
     [HttpPatch("meus/{id:guid}")]
+    [UserJwt]
     public async Task<IActionResult> Atualizar(
         Guid id,
         [FromBody] AtualizarEventoRequest request)
@@ -64,6 +67,7 @@ public class EventosController : ControllerBase
     }
 
     [HttpPost("meus/{id:guid}/publicar")]
+    [UserJwt]
     public async Task<IActionResult> Publicar(Guid id)
     {
         try
@@ -104,6 +108,7 @@ public class EventosController : ControllerBase
     }
 
     [HttpGet("meus")]
+    [UserJwt]
     public async Task<IActionResult> MeusEventos(
         [FromQuery] string ordem = "asc",
         [FromQuery] bool? publicado = null,
@@ -126,6 +131,7 @@ public class EventosController : ControllerBase
     }
 
     [HttpGet("meus/{id:guid}")]
+    [UserJwt]
     public async Task<IActionResult> ConsultarMeu(
         Guid id,
         CancellationToken cancellationToken = default)
@@ -149,6 +155,83 @@ public class EventosController : ControllerBase
         }
     }
 
+
+    [HttpGet("{id:guid}/integracao")]
+    [InternalApi]
+    public async Task<ActionResult<EventoIntegracaoResponse>>
+        ObterParaIntegracao(
+            [FromRoute] Guid id,
+            CancellationToken cancellationToken)
+    {
+        try
+        {
+            var evento = await EventoService.ObterParaIntegracaoAsync(
+                id,
+                cancellationToken);
+
+            return Ok(evento);
+        }
+        catch (NotFoundException exception)
+        {
+            return NotFound(exception.Message);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Forbid();
+        }
+    }
+
+    [HttpGet("publicados")]
+    [AllowAnonymous]
+    public async Task<IActionResult> ListarPublicados(
+        [FromQuery] string ordem = "asc",
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var eventos = await EventoService.ListarPublicadosAsync(
+                ordem,
+                cancellationToken,
+                ObterBaseUrlPublica());
+
+            return Ok(eventos);
+        }
+        catch (ArgumentException exception)
+        {
+            return BadRequest(new
+            {
+                mensagem = exception.Message
+            });
+        }
+    }
+
+    [HttpGet("publicados/{id:guid}")]
+    [AllowAnonymous]
+    public async Task<IActionResult> ListarPublicadosPorId(
+        [FromRoute] Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var eventos = await EventoService.ListarPublicadosPorIdAsync(
+                id,
+                cancellationToken,
+                ObterBaseUrlPublica());
+
+            return Ok(eventos);
+        }
+        catch (NotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
+        catch (ArgumentException exception)
+        {
+            return BadRequest(new
+            {
+                mensagem = exception.Message
+            });
+        }
+    }
 
 
 }

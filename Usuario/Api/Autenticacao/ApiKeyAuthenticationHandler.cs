@@ -5,7 +5,7 @@ using System.Text.Encodings.Web;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Options;
 
-namespace Usuario.Autenticacao
+namespace Api.Autenticacao
 {
     public sealed class ApiKeyAuthenticationHandler
         : AuthenticationHandler<AuthenticationSchemeOptions>

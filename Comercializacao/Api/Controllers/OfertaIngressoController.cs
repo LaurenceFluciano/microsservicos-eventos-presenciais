@@ -1,12 +1,13 @@
 ﻿using Api.Application.DTO;
 using Api.Application.Services;
+
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using Api.Attributes;
 
 namespace Api.Controllers;
 
 [ApiController]
-[Authorize]
 [Route("/api/ofertas")]
 public class OfertaIngressoController : ControllerBase
 {
@@ -19,6 +20,7 @@ public class OfertaIngressoController : ControllerBase
     }
 
     [HttpPost]
+    [UserJwt]
     public async Task<IActionResult> Criar(
         [FromBody] CriarOfertaIngressoRequest request)
     {
@@ -29,6 +31,7 @@ public class OfertaIngressoController : ControllerBase
 
 
     [HttpPatch("{idOferta:guid}")]
+    [UserJwt]
     public async Task<IActionResult> Atualizar(
         [FromRoute] Guid idOferta,
         [FromBody] AtualizarOfertaIngressoRequest request,
@@ -42,4 +45,56 @@ public class OfertaIngressoController : ControllerBase
 
         return Ok(response);
     }
+
+    [HttpGet("~/api/eventos/meus/{idEvento:guid}/ofertas")]
+    [UserJwt]
+    public async Task<IActionResult> ConsultarOfertasDoMeuEvento(
+        [FromRoute] Guid idEvento,
+        CancellationToken cancellationToken = default)
+    {
+      
+        var response = await _ofertaIngressoService
+            .ConsultarOfertasDoMeuEventoAsync(
+                idEvento,
+                cancellationToken
+            );
+
+        return Ok(response);
+       
+    }
+
+
+    [HttpGet("~/api/eventos/publicados/{idEvento:guid}/ofertas")]
+    [AllowAnonymous]
+    public async Task<IActionResult> ConsultarOfertasPorEventoPublicado(
+        [FromRoute] Guid idEvento,
+        CancellationToken cancellationToken = default)
+    {
+      
+        var response = await _ofertaIngressoService
+            .ConsultarOfertasPorEventoPublicadoAsync(
+                idEvento,
+                cancellationToken
+            );
+
+        return Ok(response);
+       
+    }
+
+
+    [HttpGet("eventos/{idEvento:guid}/possui-oferta-valida")]
+    [InternalApi]
+    public async Task<ActionResult<bool>> PossuiOfertaValida(
+        [FromRoute] Guid idEvento,
+        CancellationToken cancellationToken)
+    {
+        var possuiOferta = await _ofertaIngressoService
+            .PossuiOfertaValidaAsync(
+                idEvento,
+                cancellationToken
+            );
+
+        return Ok(possuiOferta);
+    }
+
 }

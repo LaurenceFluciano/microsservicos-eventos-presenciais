@@ -19,9 +19,6 @@ namespace Api
 
                 entity.HasKey(c => c.Id);
 
-                entity.Property(c => c.Codigo)
-                    .HasMaxLength(100)
-                    .IsRequired();
 
                 entity.Property(c => c.Status)
                     .HasConversion<string>()
@@ -31,7 +28,6 @@ namespace Api
                 entity.Property(c => c.DataEmissao)
                     .IsRequired();
 
-                entity.HasIndex(c => c.Codigo).IsUnique();
                 entity.HasIndex(c => c.IngressoId).IsUnique();
                 entity.HasIndex(c => c.EventoId);
             });

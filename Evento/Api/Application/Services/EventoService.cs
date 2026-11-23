@@ -2,6 +2,7 @@
 using Api.Application.DTO;
 using Api.Application.Mappers;
 using Api.Application.Ports;
+using Api.Error;
 using Api.Model;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,12 +12,12 @@ public class EventoService
 {
     private readonly DataContext _dataContext;
     private readonly IUsuarioAtual _usuarioAtual;
-    private readonly IComercializacaoClient? _comercializacaoClient;
+    private readonly IComercializacaoClient _comercializacaoClient;
 
     public EventoService(
         DataContext dataContext,
         IUsuarioAtual usuarioAtual,
-        IComercializacaoClient? comercializacaoClient = null)
+        IComercializacaoClient comercializacaoClient)
     {
         _dataContext = dataContext;
         _usuarioAtual = usuarioAtual;
@@ -69,7 +70,6 @@ public class EventoService
 
         var slugAnterior = evento.Slug;
 
-        // Valida o período resultante e preserva os campos ausentes.
         evento.AtualizarInformacoes(
             request.Nome,
             request.Descricao,
@@ -95,8 +95,6 @@ public class EventoService
         return EventoMapper.ToDetalheResponse(evento);
     }
 
-    // Lista somente os eventos pertencentes ao organizador autenticado.
-    // Filtros e ordenacao sao executados pelo banco de dados.
     public async Task<IReadOnlyList<ResumoEventoResponse>> ListarMeus(
         string? ordem = "asc",
         bool? publicado = null,
@@ -127,6 +125,26 @@ public class EventoService
         return eventos
             .Select(e => EventoMapper.ToResumoResponse(e, publicBaseUrl))
             .ToList();
+    }
+
+    public async Task<EventoIntegracaoResponse> ObterParaIntegracaoAsync(
+        Guid eventoId,
+        CancellationToken cancellationToken = default)
+    {
+        return await _dataContext.Set<Evento>()
+            .AsNoTracking()
+            .Where(e => e.Id == eventoId)
+            .Select(e => new EventoIntegracaoResponse(
+                e.Id,
+                e.OrganizadorId,
+                e.Nome,
+                e.GetStatus(),
+                e.GetStatusPublicacao(),
+                e.Inicio,
+                e.Fim
+            ))
+            .FirstOrDefaultAsync(cancellationToken)
+            ?? throw new NotFoundException("Evento não encontrado.");
     }
 
     public async Task<EventoResponse> ConsultarMeu(
@@ -169,21 +187,11 @@ public class EventoService
         if (evento.PublicadoEm.HasValue)
             return EventoMapper.ToEventoResponse(evento, publicBaseUrl);
 
-        if (_comercializacaoClient is null)
-            throw new InvalidOperationException(
-                "O cliente de Comercializacao nao foi configurado.");
 
-        bool possuiOfertaValida;
-        try
-        {
-            possuiOfertaValida = await _comercializacaoClient
-                .PossuiOfertaValidaAsync(id, cancellationToken);
-        }
-        catch (Exception ex) when (ex is not OperationCanceledException)
-        {
-            throw new HttpRequestException(
-                "Nao foi possivel consultar as ofertas de ingresso. Tente novamente.", ex);
-        }
+
+        bool possuiOfertaValida = await _comercializacaoClient
+            .PossuiOfertaValidaAsync(id, cancellationToken);
+
 
         if (!possuiOfertaValida)
             throw new Api.Error.DomainException(
@@ -193,4 +201,63 @@ public class EventoService
         await _dataContext.SaveChangesAsync(cancellationToken);
         return EventoMapper.ToEventoResponse(evento, publicBaseUrl);
     }
+
+
+    public async Task<IReadOnlyList<ResumoEventoResponse>> ListarPublicadosAsync(
+        string ordem = "asc",
+        CancellationToken cancellationToken = default,
+        string? publicBaseUrl = null)
+    {
+        if (!string.Equals(ordem, "asc", StringComparison.OrdinalIgnoreCase) &&
+            !string.Equals(ordem, "desc", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new ArgumentException(
+                "A ordem deve ser 'asc' ou 'desc'.",
+                nameof(ordem));
+        }
+
+        IQueryable<Evento> consulta = _dataContext.Set<Evento>()
+            .AsNoTracking()
+            .Where(e => e.PublicadoEm != null);
+
+        consulta = string.Equals(
+            ordem,
+            "desc",
+            StringComparison.OrdinalIgnoreCase)
+            ? consulta.OrderByDescending(e => e.Inicio).ThenBy(e => e.Id)
+            : consulta.OrderBy(e => e.Inicio).ThenBy(e => e.Id);
+
+        var eventos = await consulta.ToListAsync(cancellationToken);
+
+        return eventos
+            .Select(e => EventoMapper.ToResumoResponse(e, publicBaseUrl))
+            .ToList();
+    }
+
+    public async Task<EventoResponse> ListarPublicadosPorIdAsync(
+        Guid id,
+        CancellationToken cancellationToken = default,
+        string? publicBaseUrl = null)
+    {
+        var evento = await _dataContext.Set<Evento>()
+            .AsNoTracking()
+            .FirstOrDefaultAsync(
+                e => e.Id == id &&
+                    e.PublicadoEm != null &&
+                    e.PublicacaoEncerradaEm == null,
+                cancellationToken
+            );
+
+        if (evento is null)
+        {
+            throw new NotFoundException(
+                "Evento publicado não encontrado.");
+        }
+
+        return EventoMapper.ToEventoResponse(
+            evento,
+            publicBaseUrl);
+    }
+
+
 }

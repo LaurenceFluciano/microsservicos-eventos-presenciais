@@ -4,11 +4,11 @@ using Api.Application.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using Api.Application.DTO.Pedidos;
+using Api.Attributes;
 
 namespace Api.Controllers;
 
 [ApiController]
-[Authorize]
 [Route("api/pedidos")]
 public class PedidosController : ControllerBase
 {
@@ -33,10 +33,7 @@ public class PedidosController : ControllerBase
             cancellationToken
         );
 
-        return CreatedAtAction(
-            nameof(ObterPorId),
-            resultado
-        );
+        return Ok(resultado);
     }
 
 

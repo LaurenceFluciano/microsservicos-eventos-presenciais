@@ -1,9 +1,18 @@
 namespace Api.Application.DTO.Client;
 
-public sealed record EventoClientResponse
-(
-    Guid IdEvento,
-    Guid IdOrganizador,
+public sealed record EventoClientResponse(
+    Guid Id,
+    Guid OrganizadorId,
     string Nome,
-    bool EstaPublicado
-);
+    string Status,
+    string StatusPublicacao,
+    DateTime Inicio,
+    DateTime Fim
+)
+{
+    public bool EstaPublicado =>
+        string.Equals(
+            StatusPublicacao,
+            "PUBLICADO",
+            StringComparison.OrdinalIgnoreCase);
+}

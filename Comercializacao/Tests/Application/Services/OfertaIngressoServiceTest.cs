@@ -951,10 +951,13 @@ public class OfertaIngressoServiceTest : IDisposable
             ))
             .ReturnsAsync(
                 new EventoClientResponse(
-                    _idEvento,
-                    idOrganizador,
-                    "Evento Exemplo",
-                    false
+                    Id: _idEvento,
+                    OrganizadorId: idOrganizador,
+                    Nome: "Evento Exemplo",
+                    Status: "PLANEJAMENTO",
+                    StatusPublicacao: "RASCUNHO",
+                    Inicio: new DateTime(2026, 12, 10, 18, 0, 0),
+                    Fim: new DateTime(2026, 12, 10, 23, 0, 0)
                 )
             );
     }

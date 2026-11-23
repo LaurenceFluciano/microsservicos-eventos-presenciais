@@ -32,6 +32,12 @@ public class GlobalExceptionHandler : IExceptionHandler
                 e.Message
             ),
 
+            HttpRequestException => (
+                StatusCodes.Status503ServiceUnavailable,
+                "Serviço externo indisponível",
+                "Não foi possível concluir a comunicação com um serviço externo."
+            ),
+
             _ => (
                 StatusCodes.Status500InternalServerError,
                 "Erro interno",

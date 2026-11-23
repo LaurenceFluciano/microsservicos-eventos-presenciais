@@ -55,7 +55,8 @@ public sealed class StripeWebhookController : ControllerBase
             stripeEvent = EventUtility.ConstructEvent(
                 json,
                 signature,
-                secret
+                secret,
+                throwOnApiVersionMismatch: false
             );
         }
         catch (StripeException ex)

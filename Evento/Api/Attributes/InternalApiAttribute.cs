@@ -1,8 +1,13 @@
+using Microsoft.AspNetCore.Authorization;
+using Api.Infrastructure.Authentication;
+
 namespace Api.Attributes;
 
-[AttributeUsage(
-    AttributeTargets.Method | AttributeTargets.Class
-)]
-public sealed class InternalApiAttribute : Attribute
+public sealed class InternalApiAttribute : AuthorizeAttribute
 {
+    public InternalApiAttribute()
+    {
+        AuthenticationSchemes =
+            ApiKeyAuthenticationHandler.SchemeName;
+    }
 }

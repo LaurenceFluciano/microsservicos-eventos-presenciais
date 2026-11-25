@@ -55,16 +55,8 @@ builder.Services.AddSingleton<ITokenJwtService>(
 // E-mail
 // =====================================================
 
-if (builder.Environment.IsDevelopment())
-{
-    builder.Services.AddSingleton<IEmailSender, FakeEmailSender>();
-}
-else
-{
-    builder.Services.AddSingleton<
-        IEmailSender,
-        EmailSenderNotConfigured>();
-}
+builder.Services.AddSingleton<IEmailSender, FakeEmailSender>();
+
 
 // =====================================================
 // Autenticação

@@ -230,16 +230,17 @@ public class EventoService
             .AsNoTracking()
             .Where(e => e.PublicadoEm != null);
 
-        consulta = string.Equals(
+        var eventos = await consulta.ToListAsync(cancellationToken);
+
+        // APENAS PARA ESCOPO ACADEMICO!
+        var eventosOrdenados = string.Equals(
             ordem,
             "desc",
             StringComparison.OrdinalIgnoreCase)
-            ? consulta.OrderByDescending(e => e.Inicio).ThenBy(e => e.Id)
-            : consulta.OrderBy(e => e.Inicio).ThenBy(e => e.Id);
+            ? eventos.OrderByDescending(e => e.Inicio).ThenBy(e => e.Id)
+            : eventos.OrderBy(e => e.Inicio).ThenBy(e => e.Id);
 
-        var eventos = await consulta.ToListAsync(cancellationToken);
-
-        return eventos
+        return eventosOrdenados
             .Select(e => EventoMapper.ToResumoResponse(e, publicBaseUrl))
             .ToList();
     }

@@ -3,6 +3,7 @@ using Api.Application.DTO.Client;
 using Api.Application.Mappers;
 using Api.Application.Ports;
 using Api.Error;
+using Api;
 using Api.Infrastructure;
 using Api.Model;
 using Microsoft.EntityFrameworkCore;
@@ -202,8 +203,8 @@ public class OfertaIngressoService
         return new ConsultarOfertasEventoResponse(
             evento.Id,
             evento.Nome,
-            evento.Inicio,
-            evento.Fim,
+            HorarioBrasilia.ParaLocal(evento.Inicio),
+            HorarioBrasilia.ParaLocal(evento.Fim),
             ofertasResponse
         );
     }
@@ -276,8 +277,8 @@ public class OfertaIngressoService
         return new ConsultarOfertasEventoResponse(
             evento.Id,
             evento.Nome,
-            evento.Inicio,
-            evento.Fim,
+            HorarioBrasilia.ParaLocal(evento.Inicio),
+            HorarioBrasilia.ParaLocal(evento.Fim),
             ofertasResponse
         );
     }

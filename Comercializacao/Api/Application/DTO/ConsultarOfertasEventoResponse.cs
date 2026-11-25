@@ -3,7 +3,7 @@ namespace Api.Application.DTO;
 public sealed record ConsultarOfertasEventoResponse(
     Guid IdEvento,
     string NomeEvento,
-    DateTime Inicio,
-    DateTime Fim,
+    DateTimeOffset Inicio,
+    DateTimeOffset Fim,
     IReadOnlyList<OfertaIngressoResponse> Ofertas
 );

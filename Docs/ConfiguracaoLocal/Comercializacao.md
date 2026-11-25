@@ -110,6 +110,48 @@ dotnet user-secrets set "Stripe:WebhookSecret" "whsec_SEU_SEGREDO"
 
 **Atenção:** a chave `sk_test_` e o segredo `whsec_` possuem responsabilidades diferentes e não são intercambiáveis.
 
+### 2.5. Configurar o RabbitMQ
+
+O microsserviço Comercialização utiliza RabbitMQ para consumir mensagens de integração publicadas pelo microsserviço Eventos.
+
+Ao receber uma mensagem `EventoIniciadoEvent`, Comercialização encerra automaticamente todas as ofertas de ingressos ativas associadas ao evento.
+
+As configurações de conexão podem ser definidas no arquivo `appsettings.Development.json`:
+
+```json
+"RabbitMQ": {
+    "HostName": "localhost",
+    "Port": 5672
+}
+```
+
+Configure as credenciais utilizando o .NET User Secrets:
+
+```bash
+dotnet user-secrets set "RabbitMQ:UserName" "SEU_USUARIO"
+dotnet user-secrets set "RabbitMQ:Password" "SUA_SENHA"
+```
+
+O microsserviço deve utilizar o mesmo broker configurado em Eventos.
+
+#### Topologia de mensageria
+
+| Componente | Valor |
+|---|---|
+| Exchange | `eventos` |
+| Tipo da exchange | `topic` |
+| Routing Key | `evento.iniciado` |
+| Queue | `comercializacao.eventos.iniciados` |
+| Papel do microsserviço | Consumer |
+
+A fila e seu vínculo com a exchange são declarados automaticamente pelo consumidor durante a inicialização.
+
+As mensagens são confirmadas utilizando ACK somente após a conclusão bem-sucedida do encerramento das ofertas.
+
+A operação de encerramento é idempotente: mensagens repetidas não modificam ofertas que já estejam encerradas ou esgotadas.
+
+**Importante:** o RabbitMQ deve estar em execução antes de iniciar Comercialização.
+
 ## 3. Verificar as configurações da aplicação
 
 As seguintes configurações gerais já estão definidas em `appsettings.json`:

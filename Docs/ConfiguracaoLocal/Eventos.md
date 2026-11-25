@@ -49,6 +49,56 @@ A chave deve corresponder à chave privada utilizada pelo microsserviço Usuári
 
 **Não configure a chave privada RSA em Eventos.**
 
+### 2.3. Configurar o RabbitMQ
+
+O microsserviço Eventos utiliza RabbitMQ para publicar mensagens de integração relacionadas ao ciclo de vida dos eventos.
+
+Quando um evento atinge seu horário de início, um serviço em segundo plano identifica esse acontecimento e publica uma mensagem `EventoIniciadoEvent`.
+
+As configurações de conexão podem ser definidas no arquivo `appsettings.Development.json`:
+
+```json
+"RabbitMQ": {
+    "HostName": "localhost",
+    "Port": 5672
+}
+```
+
+As credenciais devem ser configuradas utilizando o .NET User Secrets:
+
+```bash
+dotnet user-secrets set "RabbitMQ:UserName" "SEU_USUARIO"
+dotnet user-secrets set "RabbitMQ:Password" "SUA_SENHA"
+```
+
+Utilize as credenciais definidas durante a configuração do RabbitMQ.
+
+| Configuração | Finalidade |
+|---|---|
+| `RabbitMQ:HostName` | Endereço do broker |
+| `RabbitMQ:Port` | Porta de comunicação AMQP |
+| `RabbitMQ:UserName` | Usuário de autenticação |
+| `RabbitMQ:Password` | Senha de autenticação |
+
+#### Topologia de mensageria
+
+| Componente | Valor |
+|---|---|
+| Exchange | `eventos` |
+| Tipo da exchange | `topic` |
+| Routing Key | `evento.iniciado` |
+| Papel do microsserviço | Producer |
+
+O serviço em segundo plano verifica, a cada minuto, a existência de eventos iniciados cujo processamento ainda não foi registrado.
+
+O RabbitMQ deve estar em execução e a fila de destino deve estar vinculada à exchange antes da publicação das mensagens.
+
+A interface administrativa do RabbitMQ, quando habilitada, pode ser acessada em:
+
+http://localhost:15672
+
+
+
 ## 3. Verificar as configurações
 
 Execute:

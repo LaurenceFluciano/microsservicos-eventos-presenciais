@@ -59,6 +59,10 @@ Responsável pelo cadastro, gerenciamento e publicação de eventos.
 | `Services:Comercializacao:BaseUrl` | Endereço do microsserviço Comercialização | Não |
 | `ConnectionStrings:DefaultConnection` | Conexão com o banco SQLite | Depende do conteúdo |
 | `Cors:AllowedOrigins` | Origens permitidas para chamadas de navegadores | Não |
+| `RabbitMQ:HostName` | Endereço do broker RabbitMQ | Não |
+| `RabbitMQ:Port` | Porta de comunicação AMQP | Não |
+| `RabbitMQ:UserName` | Usuário de autenticação no RabbitMQ | **Sim** |
+| `RabbitMQ:Password` | Senha de autenticação no RabbitMQ | **Sim** |
 
 **Valores de referência:**
 
@@ -86,6 +90,10 @@ Responsável pela administração de ofertas, criação de pedidos, processament
 | `Services:Portaria:PublicBaseUrl` | Endereço utilizado para compor URLs públicas presentes nos ingressos | Não |
 | `ConnectionStrings:DefaultConnection` | Conexão com o banco SQLite | Depende do conteúdo |
 | `Cors:AllowedOrigins` | Origens permitidas para chamadas de navegadores | Não |
+| `RabbitMQ:HostName` | Endereço do broker RabbitMQ | Não |
+| `RabbitMQ:Port` | Porta de comunicação AMQP | Não |
+| `RabbitMQ:UserName` | Usuário de autenticação no RabbitMQ | **Sim** |
+| `RabbitMQ:Password` | Senha de autenticação no RabbitMQ | **Sim** |
 
 **Observações:**
 

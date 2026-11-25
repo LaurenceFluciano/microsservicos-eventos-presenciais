@@ -271,4 +271,35 @@ public class EventoService
     }
 
 
+    public async Task<EventoResponse> ConsultarPublicadoPorSlugAsync(
+        string slug,
+        CancellationToken cancellationToken = default,
+        string? publicBaseUrl = null)
+    {
+        var evento = await _dataContext.Set<Evento>()
+            .AsNoTracking()
+            .Where(e =>
+                e.PublicadoEm != null &&
+                e.PublicacaoEncerradaEm == null
+            )
+            .SingleOrDefaultAsync(
+                e => (e.SlugNumero == 1
+                    ? e.Slug
+                    : e.Slug + "-" + e.SlugNumero.ToString()) == slug,
+                cancellationToken
+            );
+
+        if (evento is null)
+        {
+            throw new NotFoundException(
+                "Evento publicado não encontrado."
+            );
+        }
+
+        return EventoMapper.ToEventoResponse(
+            evento,
+            publicBaseUrl
+        );
+    }
+
 }

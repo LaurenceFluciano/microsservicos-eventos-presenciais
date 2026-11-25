@@ -47,7 +47,6 @@ public static class EventoMapper
             Status = evento.GetStatus(),
             CriadoEm = evento.CriadoEm,
             PublicadoEm = HorarioBrasilia.ParaLocal(evento.PublicadoEm),
-            PublicacaoEncerradaEm = HorarioBrasilia.ParaLocal(evento.PublicacaoEncerradaEm),
             UrlEvento = evento.PublicadoEm.HasValue
                 ? string.IsNullOrWhiteSpace(publicBaseUrl)
                     ? caminhoPublico
@@ -96,10 +95,7 @@ public static class EventoMapper
             Status = evento.GetStatus(),
 
             CriadoEm = HorarioBrasilia.ParaLocal(evento.CriadoEm),
-            PublicadoEm = HorarioBrasilia.ParaLocal(evento.PublicadoEm),
-            PublicacaoEncerradaEm = HorarioBrasilia.ParaLocal(
-                evento.PublicacaoEncerradaEm
-            )
+            PublicadoEm = HorarioBrasilia.ParaLocal(evento.PublicadoEm)
         };
     }
 }

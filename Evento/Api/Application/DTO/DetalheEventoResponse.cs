@@ -25,5 +25,4 @@ public class DetalheEventoResponse
     // Datas de controle
     public DateTimeOffset CriadoEm { get; init; }
     public DateTimeOffset? PublicadoEm { get; init; }
-    public DateTimeOffset? PublicacaoEncerradaEm { get; init; }
 }

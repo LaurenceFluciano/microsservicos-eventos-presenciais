@@ -254,8 +254,7 @@ public class EventoService
             .AsNoTracking()
             .FirstOrDefaultAsync(
                 e => e.Id == id &&
-                    e.PublicadoEm != null &&
-                    e.PublicacaoEncerradaEm == null,
+                    e.PublicadoEm != null,
                 cancellationToken
             );
 
@@ -279,8 +278,7 @@ public class EventoService
         var evento = await _dataContext.Set<Evento>()
             .AsNoTracking()
             .Where(e =>
-                e.PublicadoEm != null &&
-                e.PublicacaoEncerradaEm == null
+                e.PublicadoEm != null
             )
             .SingleOrDefaultAsync(
                 e => (e.SlugNumero == 1

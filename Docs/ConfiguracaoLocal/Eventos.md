@@ -113,12 +113,16 @@ As propriedades esperadas são:
 |---|---|
 | `Authentication:ApiKey` | Autenticação das chamadas internas |
 | `Jwt:PublicKeyPem` | Validação da assinatura dos JWTs |
+| `RabbitMQ:UserName` | Usuário de autenticação no RabbitMQ |
+| `RabbitMQ:Password` | Senha de autenticação no RabbitMQ |
 
 As configurações `Jwt:Issuer` e `Jwt:Audience` já estão definidas no `appsettings.json`, portanto não precisam ser adicionadas aos User Secrets.
 
 **Atenção:** o comando de listagem exibe os valores das configurações. Não compartilhe sua saída contendo credenciais.
 
 ## 4. Executar o microsserviço
+
+> Para testar o encerramento automático de ofertas de ingressos, o RabbitMQ deve estar em execução. Recomenda-se iniciar Comercialização antes de Eventos, garantindo que a fila e seu vínculo com a exchange estejam configurados.
 
 Restaure as dependências e execute a aplicação:
 

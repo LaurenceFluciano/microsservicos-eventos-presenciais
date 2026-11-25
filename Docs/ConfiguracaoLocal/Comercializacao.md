@@ -161,6 +161,7 @@ As seguintes configurações gerais já estão definidas em `appsettings.json`:
 | `Jwt:Issuer` | `Usuario` |
 | `Jwt:Audience` | `EventosPresenciais` |
 
+
 O arquivo `appsettings.Development.json` contém as configurações locais, incluindo:
 
 | Configuração | Valor de desenvolvimento |
@@ -172,6 +173,13 @@ O arquivo `appsettings.Development.json` contém as configurações locais, incl
 | `Stripe:SuccessUrl` | URL de retorno após concluir o Checkout |
 | `Stripe:CancelUrl` | URL de retorno ao sair do Checkout |
 | `Cors:AllowedOrigins` | Origens autorizadas no desenvolvimento |
+| `Services:Usuarios:BaseUrl` | `http://localhost:5296/` |
+| `RabbitMQ:HostName` | `localhost` |
+| `RabbitMQ:Port` | `5672` |
+
+A configuração `Services:Usuarios:BaseUrl` é utilizada para consultar compradores pelo endereço de e-mail durante a criação de pedidos. O comprador deve estar previamente cadastrado em Usuários, mas não precisa possuir uma conta de acesso.
+
+Comercialização não é responsável pelo cadastro de usuários.
 
 As URLs de sucesso e cancelamento do Stripe Checkout são configurações de navegação.
 
@@ -197,6 +205,8 @@ As propriedades esperadas são:
 | `Jwt:PublicKeyPem` | Validação de JWTs |
 | `Stripe:SecretKey` | Chamadas autenticadas à API Stripe |
 | `Stripe:WebhookSecret` | Validação da assinatura dos webhooks |
+| `RabbitMQ:UserName` | Usuário de autenticação no RabbitMQ |
+| `RabbitMQ:Password` | Senha de autenticação no RabbitMQ |
 
 O comando exibe os valores armazenados. Não compartilhe sua saída contendo credenciais.
 
@@ -226,7 +236,13 @@ A aplicação utiliza as configurações definidas em `Properties/launchSettings
 
 O banco SQLite é gerenciado pelo Entity Framework Core, com migrations aplicadas durante a inicialização.
 
-Para testar as operações que consultam eventos ou criam credenciais de acesso, os microsserviços correspondentes também devem estar executando.
+Para testar a criação de ofertas e pedidos, Eventos deve estar em execução, pois Comercialização consulta o estado temporal do evento.
+
+Para criar pedidos, Usuários também deve estar em execução, permitindo a identificação do comprador pelo e-mail informado.
+
+Portaria deve estar disponível durante a emissão das credenciais de acesso dos ingressos.
+
+O RabbitMQ deve estar em execução antes da inicialização de Comercialização.
 
 ---
 
@@ -437,11 +453,23 @@ Para validar a integração, execute o seguinte fluxo:
 3. Execute o listener do Stripe CLI.
 4. Crie um evento e uma oferta de ingresso ativa.
 5. Publique o evento.
-6. Crie um pedido em Comercialização.
+6. Cadastre um comprador em Usuários, caso ainda não exista, e crie um pedido em Comercialização informando o e-mail do comprador, a oferta de ingresso e a quantidade desejada.
 7. Consulte o pedido e obtenha a URL de Checkout.
 8. Abra a URL de Checkout no navegador.
 9. Realize um pagamento utilizando os dados de teste fornecidos pela Stripe.
 10. Observe o webhook e verifique o processamento do pedido.
+
+Exemplo de corpo da requisição para criação de um pedido:
+
+```json
+{
+    "ofertaId": "UUID_DA_OFERTA",
+    "emailComprador": "comprador@example.com",
+    "quantidade": 2
+}
+```
+
+O comprador não precisa possuir uma conta de acesso, mas deve estar previamente cadastrado em Usuários. Caso o e-mail não corresponda a um cadastro existente, a solicitação retornará HTTP 404.
 
 ### 7.1. Cartão de teste
 
@@ -498,6 +526,11 @@ O redirecionamento para a página de sucesso do Checkout não comprova, sozinho,
 | Ingresso emitido, mas pedido em processamento | Falha no fluxo de confirmação das credenciais |
 | Falha ao criar credencial | Verificar URL, API Key e disponibilidade de Portaria |
 | Erro após redirecionamento para `localhost:3000` | Frontend de retorno não implementado ou não iniciado |
+| Comprador não encontrado (HTTP 404) | E-mail informado não está cadastrado em Usuários |
+| Falha de comunicação com Usuários | Verificar `Services:Usuarios:BaseUrl`, API Key e disponibilidade do microsserviço |
+| Pedido ou oferta recusada | Verificar se o evento está com status `AGENDADO` |
+| Ofertas não encerradas automaticamente | Verificar a disponibilidade do RabbitMQ e a execução do consumidor |
+
 
 ### 8.1. Incompatibilidade de versões Stripe
 
@@ -547,6 +580,11 @@ O processamento deve ser idempotente e permitir recuperação de falhas sem dupl
 | `Services:Portaria:BaseUrl` | `appsettings.Development.json` |
 | `Services:Portaria:PublicBaseUrl` | `appsettings.Development.json` |
 | `Cors:AllowedOrigins` | `appsettings.Development.json` |
+| `Services:Usuarios:BaseUrl` | `appsettings.Development.json` |
+| `RabbitMQ:HostName` | `appsettings.Development.json` |
+| `RabbitMQ:Port` | `appsettings.Development.json` |
+| `RabbitMQ:UserName` | User Secrets |
+| `RabbitMQ:Password` | User Secrets |
 
 Com essas configurações, o microsserviço Comercialização estará preparado para execução e testes de pagamentos em ambiente de desenvolvimento.
 

@@ -41,6 +41,7 @@ Responsável pelo gerenciamento de usuários, autenticação e emissão dos toke
 | `Jwt:PrivateKeyPem` | Chave RSA privada utilizada na assinatura dos tokens | **Sim** |
 | `ConnectionStrings:DefaultConnection` | Conexão com o banco SQLite | Depende do conteúdo |
 | `Cors:AllowedOrigins` | Origens permitidas para chamadas de navegadores | Não |
+| `Authentication:ApiKey` | Autenticação das requisições internas, incluindo consultas de compradores por e-mail | **Sim** |
 
 **Observação:** os nomes `Jwt:PrivateKeyPem` e `ConnectionStrings:DefaultConnection` devem ser conferidos no código do microsserviço Usuários. Esta seção descreve as configurações esperadas pela arquitetura, mas não constitui um inventário definitivo daquele projeto.
 
@@ -67,7 +68,7 @@ Responsável pelo cadastro, gerenciamento e publicação de eventos.
 **Valores de referência:**
 
 - `Jwt:Audience`: `EventosPresenciais`
-- `Services:ComercializacaoUrl`: `http://localhost:5298/` em desenvolvimento.
+- `Services:Comercializacao:BaseUrl`: `http://localhost:5298/` em desenvolvimento.
 
 O valor de `Jwt:Issuer` deve ser exatamente igual ao configurado em Usuários.
 
@@ -94,6 +95,7 @@ Responsável pela administração de ofertas, criação de pedidos, processament
 | `RabbitMQ:Port` | Porta de comunicação AMQP | Não |
 | `RabbitMQ:UserName` | Usuário de autenticação no RabbitMQ | **Sim** |
 | `RabbitMQ:Password` | Senha de autenticação no RabbitMQ | **Sim** |
+| `Services:Usuarios:BaseUrl` | Endereço da API de Usuários para consulta e identificação de compradores | Não |
 
 **Observações:**
 
@@ -127,6 +129,7 @@ As seguintes informações não devem ser publicadas no repositório:
 - Chaves de API internas.
 - Chaves secretas da Stripe.
 - Segredos de assinatura de webhooks.
+- Credenciais de autenticação do RabbitMQ.
 
 A chave pública RSA pode ser compartilhada com os microsserviços validadores, mas deve corresponder à chave privada do serviço Usuários.
 

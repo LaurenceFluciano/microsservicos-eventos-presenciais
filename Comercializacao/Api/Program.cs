@@ -169,6 +169,24 @@ builder.Services
         })
     .AddHttpMessageHandler<InternalApiKeyHandler>();
 
+
+// Usuários
+builder.Services
+    .AddHttpClient<IUsuarioClient, HttpUsuarioClient>(
+        client =>
+        {
+            client.BaseAddress = new Uri(
+                builder.Configuration[
+                    "Services:Usuarios:BaseUrl"
+                ] ?? throw new InvalidOperationException(
+                    "URL de Usuários não configurada."
+                )
+            );
+
+            client.Timeout = TimeSpan.FromSeconds(5);
+        })
+    .AddHttpMessageHandler<InternalApiKeyHandler>();
+
 #endregion
 
 #region RABBITMQ

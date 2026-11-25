@@ -43,6 +43,13 @@ public class OfertaIngressoService
                 "Você não tem permissão para adicionar ofertas de ingressos nesse evento."
             );
 
+        if (evento.Status != "AGENDADO")
+            throw new DomainException(
+                "Somente eventos agendados permitem a criação de ofertas de ingressos."
+            );
+        
+
+
         var oferta = _ofertaIngressoMapper.ToEntity(request, evento.OrganizadorId);
 
         _dataContext.OfertasIngresso.Add(oferta);

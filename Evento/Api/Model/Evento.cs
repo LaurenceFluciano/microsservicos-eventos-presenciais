@@ -45,8 +45,8 @@ public class Evento
     public string Descricao { get; set => field = value.Trim(); } = string.Empty;
     public string Local { get; set => field = value.Trim(); } = string.Empty;
 
-    public DateTime Inicio { get; private set; }
-    public DateTime Fim { get; private set; }
+    public DateTimeOffset Inicio { get; private set; }
+    public DateTimeOffset Fim { get; private set; }
 
     public string Slug { get; private set; } = string.Empty;
 
@@ -54,8 +54,8 @@ public class Evento
 
 
 
-    public DateTime? PublicadoEm { get; set; }
-    public DateTime? PublicacaoEncerradaEm { get; set; }
+    public DateTimeOffset? PublicadoEm { get; set; }
+    public DateTimeOffset? PublicacaoEncerradaEm { get; set; }
 
     public DateTimeOffset CriadoEm { get; init; }
 
@@ -68,7 +68,7 @@ public class Evento
 
     public EnumStatusEvento GetStatus()
     {
-        var agora = DateTime.UtcNow;
+        var agora = DateTimeOffset.UtcNow;
 
         if (agora < Inicio)
             return EnumStatusEvento.AGENDADO;
@@ -81,7 +81,7 @@ public class Evento
 
     private Evento() {}
 
-    public Evento(Guid organizadorId, string nome, DateTime inicio, DateTime fim) {
+    public Evento(Guid organizadorId, string nome, DateTimeOffset inicio, DateTimeOffset fim) {
 
         if (organizadorId == Guid.Empty)
             throw new DomainException(
@@ -96,10 +96,12 @@ public class Evento
         CriadoEm = DateTimeOffset.UtcNow;
     }
 
-    public void Agendar(DateTime inicio, DateTime fim)
+    public void Agendar(
+        DateTimeOffset inicio,
+        DateTimeOffset fim)
     {
-        if (inicio == DateTime.MinValue ||
-            fim == DateTime.MinValue)
+        if (inicio == DateTimeOffset.MinValue ||
+            fim == DateTimeOffset.MinValue)
         {
             throw new DomainException(
                 "O evento deve ter um período de início e término definido."
@@ -113,10 +115,10 @@ public class Evento
             );
         }
 
-        Inicio = inicio;
-        Fim = fim;
+        Inicio = inicio.ToUniversalTime();
+        Fim = fim.ToUniversalTime();
     }
-
+    
     private static string GerarSlug(string texto)
     {
         if (string.IsNullOrWhiteSpace(texto))
@@ -151,8 +153,8 @@ public class Evento
         string? nome,
         string? descricao,
         string? local,
-        DateTime? inicio,
-        DateTime? fim)
+        DateTimeOffset? inicio,
+        DateTimeOffset? fim)
     {
         // Validar antes de modificar as propriedades da entidade.
         if (nome is not null)
@@ -179,7 +181,7 @@ public class Evento
     // A segunda chamada de publicacao preserva a primeira data.
     public void Publicar()
     {
-        PublicadoEm ??= DateTime.UtcNow;
+        PublicadoEm ??= DateTimeOffset.UtcNow;
     }
 
     public void DefinirNumeroSlug(int numero)

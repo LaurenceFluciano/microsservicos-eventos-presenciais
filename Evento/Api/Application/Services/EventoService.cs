@@ -103,7 +103,12 @@ public class EventoService
     {
         if (!string.Equals(ordem, "asc", StringComparison.OrdinalIgnoreCase) &&
             !string.Equals(ordem, "desc", StringComparison.OrdinalIgnoreCase))
-            throw new ArgumentException("A ordem deve ser 'asc' ou 'desc'.", nameof(ordem));
+        {
+            throw new ArgumentException(
+                "A ordem deve ser 'asc' ou 'desc'.",
+                nameof(ordem)
+            );
+        }
 
         var organizadorId = _usuarioAtual.GetId();
 
@@ -116,13 +121,18 @@ public class EventoService
                 ? consulta.Where(e => e.PublicadoEm != null)
                 : consulta.Where(e => e.PublicadoEm == null);
 
-        consulta = string.Equals(ordem, "desc", StringComparison.OrdinalIgnoreCase)
-            ? consulta.OrderByDescending(e => e.Inicio).ThenBy(e => e.Id)
-            : consulta.OrderBy(e => e.Inicio).ThenBy(e => e.Id);
 
         var eventos = await consulta.ToListAsync(cancellationToken);
 
-        return eventos
+        // APENAS PARA ESCOPO ACADEMICO!
+        var eventosOrdenados = string.Equals(
+            ordem,
+            "desc",
+            StringComparison.OrdinalIgnoreCase)
+            ? eventos.OrderByDescending(e => e.Inicio).ThenBy(e => e.Id)
+            : eventos.OrderBy(e => e.Inicio).ThenBy(e => e.Id);
+
+        return eventosOrdenados
             .Select(e => EventoMapper.ToResumoResponse(e, publicBaseUrl))
             .ToList();
     }

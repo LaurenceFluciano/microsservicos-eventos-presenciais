@@ -8,6 +8,6 @@ public sealed record EventoIntegracaoResponse(
     string Nome,
     EnumStatusEvento Status,
     EnumStatusPublicacaoEvento StatusPublicacao,
-    DateTime Inicio,
-    DateTime Fim
+    DateTimeOffset Inicio,
+    DateTimeOffset Fim
 );

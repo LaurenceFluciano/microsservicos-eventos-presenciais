@@ -7,6 +7,8 @@ using Api;
 using Api.Infrastructure;
 using Api.Model;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Http.HttpResults;
+using Api.Application.Events;
 
 namespace Api.Application.Services;
 
@@ -163,7 +165,6 @@ public class OfertaIngressoService
         var ofertas = await _dataContext.OfertasIngresso
             .AsNoTracking()
             .Where(o => o.IdEvento == idEvento)
-            .Where(o => o.Status == StatusOfertaIngresso.ATIVA)
             .OrderBy(o => o.Preco)
             .ThenBy(o => o.Id)
             .ToListAsync(cancellationToken);
@@ -305,5 +306,19 @@ public class OfertaIngressoService
             );
     }
 
+
+    public async Task Encerrar(EventoIniciadoEvent notification, CancellationToken cancellationToken)
+    {
+        await _dataContext.OfertasIngresso
+            .Where(o => o.IdEvento == notification.EventoId)
+            .Where(o => o.Status == StatusOfertaIngresso.ATIVA)
+            .ExecuteUpdateAsync(
+                setters => setters.SetProperty(
+                    o => o.Status,
+                    StatusOfertaIngresso.ENCERRADA
+                ),
+                cancellationToken
+            );
+    }
 }
 

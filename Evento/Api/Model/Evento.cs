@@ -55,7 +55,11 @@ public class Evento
 
 
     public DateTimeOffset? PublicadoEm { get; set; }
+
+    // Por enquanto não esta sendo usado
     public DateTimeOffset? PublicacaoEncerradaEm { get; set; }
+
+    public DateTimeOffset? InicioProcessadoEm { get; private set; }
 
     public DateTimeOffset CriadoEm { get; init; }
 
@@ -118,7 +122,7 @@ public class Evento
         Inicio = inicio.ToUniversalTime();
         Fim = fim.ToUniversalTime();
     }
-    
+
     private static string GerarSlug(string texto)
     {
         if (string.IsNullOrWhiteSpace(texto))
@@ -194,6 +198,19 @@ public class Evento
         }
 
         SlugNumero = numero;
+    }
+
+
+    public void RegistrarInicioProcessado()
+    {
+        if (DateTimeOffset.UtcNow < Inicio)
+        {
+            throw new DomainException(
+                "O evento ainda não iniciou."
+            );
+        }
+
+        InicioProcessadoEm ??= DateTimeOffset.UtcNow;
     }
 }
 

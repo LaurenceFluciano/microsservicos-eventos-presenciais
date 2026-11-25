@@ -11,6 +11,7 @@ using Api.Infrastructure;
 using Api.Infrastructure.Authentication;
 using Api.Infrastructure.Client;
 using Api.Infrastructure.Payments;
+using Api.Infrastructure.Messaging;
 
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -18,6 +19,8 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
+
+using RabbitMQ.Client;
 using Scalar.AspNetCore;
 using Stripe;
 
@@ -165,6 +168,40 @@ builder.Services
             client.Timeout = TimeSpan.FromSeconds(10);
         })
     .AddHttpMessageHandler<InternalApiKeyHandler>();
+
+#endregion
+
+#region RABBITMQ
+
+builder.Services.AddSingleton(sp =>
+{
+    var configuration =
+        sp.GetRequiredService<IConfiguration>();
+
+    return new ConnectionFactory
+    {
+        HostName = configuration["RabbitMQ:HostName"]
+            ?? "localhost",
+
+        Port = configuration.GetValue<int>(
+            "RabbitMQ:Port", 5672
+        ),
+
+        UserName = configuration["RabbitMQ:UserName"]
+            ?? throw new InvalidOperationException(
+                "Usuário RabbitMQ não configurado."
+            ),
+
+        Password = configuration["RabbitMQ:Password"]
+            ?? throw new InvalidOperationException(
+                "Senha RabbitMQ não configurada."
+            ),
+
+        AutomaticRecoveryEnabled = true
+    };
+});
+
+builder.Services.AddHostedService<EventoIniciadoConsumer>();
 
 #endregion
 

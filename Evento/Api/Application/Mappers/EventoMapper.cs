@@ -20,8 +20,8 @@ public static class EventoMapper
         return new Evento(
             organizadorId,
             request.Nome,
-            request.Inicio.Value,
-            request.Fim.Value
+            HorarioBrasilia.ParaUtc(request.Inicio.Value),
+            HorarioBrasilia.ParaUtc(request.Fim.Value)
         )
         {
             Descricao = request.Descricao ?? string.Empty,
@@ -41,13 +41,12 @@ public static class EventoMapper
             Descricao = evento.Descricao,
             Local = evento.Local,
             Slug = evento.SlugPublico,
-            Inicio = evento.Inicio,
-            Fim = evento.Fim,
+            Inicio = HorarioBrasilia.ParaLocal(evento.Inicio),
+            Fim = HorarioBrasilia.ParaLocal(evento.Fim),
             StatusPublicacao = evento.GetStatusPublicacao(),
             Status = evento.GetStatus(),
             CriadoEm = evento.CriadoEm,
-            PublicadoEm = evento.PublicadoEm,
-            PublicacaoEncerradaEm = evento.PublicacaoEncerradaEm,
+            PublicadoEm = HorarioBrasilia.ParaLocal(evento.PublicadoEm),
             UrlEvento = evento.PublicadoEm.HasValue
                 ? string.IsNullOrWhiteSpace(publicBaseUrl)
                     ? caminhoPublico
@@ -89,15 +88,14 @@ public static class EventoMapper
             Local = evento.Local,
             Slug = evento.SlugPublico,
 
-            Inicio = evento.Inicio,
-            Fim = evento.Fim,
+            Inicio = HorarioBrasilia.ParaLocal(evento.Inicio),
+            Fim = HorarioBrasilia.ParaLocal(evento.Fim),
 
             StatusPublicacao = evento.GetStatusPublicacao(),
             Status = evento.GetStatus(),
 
-            CriadoEm = evento.CriadoEm,
-            PublicadoEm = evento.PublicadoEm,
-            PublicacaoEncerradaEm = evento.PublicacaoEncerradaEm
+            CriadoEm = HorarioBrasilia.ParaLocal(evento.CriadoEm),
+            PublicadoEm = HorarioBrasilia.ParaLocal(evento.PublicadoEm)
         };
     }
 }

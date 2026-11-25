@@ -3,9 +3,12 @@ using Api.Application.DTO.Client;
 using Api.Application.Mappers;
 using Api.Application.Ports;
 using Api.Error;
+using Api;
 using Api.Infrastructure;
 using Api.Model;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Http.HttpResults;
+using Api.Application.Events;
 
 namespace Api.Application.Services;
 
@@ -41,6 +44,13 @@ public class OfertaIngressoService
             throw new DomainException(
                 "Você não tem permissão para adicionar ofertas de ingressos nesse evento."
             );
+
+        if (evento.Status != "AGENDADO")
+            throw new DomainException(
+                "Somente eventos agendados permitem a criação de ofertas de ingressos."
+            );
+        
+
 
         var oferta = _ofertaIngressoMapper.ToEntity(request, evento.OrganizadorId);
 
@@ -155,7 +165,6 @@ public class OfertaIngressoService
         var ofertas = await _dataContext.OfertasIngresso
             .AsNoTracking()
             .Where(o => o.IdEvento == idEvento)
-            .Where(o => o.Status == StatusOfertaIngresso.ATIVA)
             .OrderBy(o => o.Preco)
             .ThenBy(o => o.Id)
             .ToListAsync(cancellationToken);
@@ -202,8 +211,8 @@ public class OfertaIngressoService
         return new ConsultarOfertasEventoResponse(
             evento.Id,
             evento.Nome,
-            evento.Inicio,
-            evento.Fim,
+            HorarioBrasilia.ParaLocal(evento.Inicio),
+            HorarioBrasilia.ParaLocal(evento.Fim),
             ofertasResponse
         );
     }
@@ -276,8 +285,8 @@ public class OfertaIngressoService
         return new ConsultarOfertasEventoResponse(
             evento.Id,
             evento.Nome,
-            evento.Inicio,
-            evento.Fim,
+            HorarioBrasilia.ParaLocal(evento.Inicio),
+            HorarioBrasilia.ParaLocal(evento.Fim),
             ofertasResponse
         );
     }
@@ -297,5 +306,19 @@ public class OfertaIngressoService
             );
     }
 
+
+    public async Task Encerrar(EventoIniciadoEvent notification, CancellationToken cancellationToken)
+    {
+        await _dataContext.OfertasIngresso
+            .Where(o => o.IdEvento == notification.EventoId)
+            .Where(o => o.Status == StatusOfertaIngresso.ATIVA)
+            .ExecuteUpdateAsync(
+                setters => setters.SetProperty(
+                    o => o.Status,
+                    StatusOfertaIngresso.ENCERRADA
+                ),
+                cancellationToken
+            );
+    }
 }
 

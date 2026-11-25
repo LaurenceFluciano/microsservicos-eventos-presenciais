@@ -20,7 +20,6 @@ public class IngressosController : ControllerBase
 
 
     [HttpGet("{id:guid}")]
-    [UserJwt]
     public async Task<IActionResult> ObterPorId(
         [FromRoute] Guid id,
         CancellationToken cancellationToken)

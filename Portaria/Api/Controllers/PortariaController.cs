@@ -17,7 +17,7 @@ public sealed class PortariaController : ControllerBase
         _servicePortaria = portariaService;
     }
 
-    [HttpPost("/credencial-acesso")]
+    [HttpPost("credencial-acesso")]
     [InternalApi]
     public async Task<IActionResult> CriarCredencialAcesso(
         [FromBody] CriarCredencialAcessoRequest request,

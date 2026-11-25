@@ -69,6 +69,11 @@ public class PedidoService
             throw new DomainException(
                 "A oferta de ingresso não está ativa."
             );
+
+        if (evento.Status != "AGENDADO")
+            throw new DomainException(
+                "Somente eventos agendados permitem a criação de ofertas de ingressos."
+            );
         
         var comprometida = await _ofertaIngressoService.ObterQuantidadeComprometida(
             oferta.Id,

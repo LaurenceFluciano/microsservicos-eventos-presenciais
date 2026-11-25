@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using Api.Application.DTO.Pedidos;
 using Api.Attributes;
+using Api.Application.Ports;
 
 namespace Api.Controllers;
 
@@ -14,26 +15,46 @@ public class PedidosController : ControllerBase
 {
     private readonly PedidoService _pedidoService;
     private readonly PagamentoService _pagamentoService;
+    private readonly IUsuarioClient _usuarioClient;
+
+    
 
     public PedidosController(
         PedidoService pedidoService,
-        PagamentoService pagamentoService)
+        PagamentoService pagamentoService,
+        IUsuarioClient usuarioClient)
     {
         _pedidoService = pedidoService;
         _pagamentoService = pagamentoService;
+        _usuarioClient = usuarioClient;
     }
 
     [HttpPost]
-    public async Task<IActionResult> Criar(
-        [FromBody] CriarPedidoRequest request,
+    [AllowAnonymous]
+    public async Task<IActionResult> CriarPedido(
+        [FromBody] CriarPedidoInputDTO dto,
         CancellationToken cancellationToken)
     {
-        var resultado = await _pedidoService.CriarPedido(
+        var comprador = await _usuarioClient.ObterPorEmailAsync(
+            dto.EmailComprador,
+            cancellationToken
+        );
+
+        if (comprador is null)
+            return NotFound("Comprador não encontrado.");
+
+        var request = new CriarPedidoRequest(
+            OfertaId: dto.OfertaId,
+            CompradorId: comprador.Id,
+            Quantidade: dto.Quantidade
+        );
+
+        var pedido = await _pedidoService.CriarPedido(
             request,
             cancellationToken
         );
 
-        return Ok(resultado);
+        return Ok(pedido);
     }
 
 

@@ -83,12 +83,13 @@ erDiagram
         string Nome
         string Descricao
         string Local
-        DateTime Inicio
-        DateTime Fim
+        DateTimeOffset Inicio
+        DateTimeOffset Fim
         string Slug
         int SlugNumero
-        DateTime PublicadoEm "opcional"
-        DateTime PublicacaoEncerradaEm "opcional"
+        DateTimeOffset PublicadoEm "opcional"
+        DateTimeOffset PublicacaoEncerradaEm "opcional"
+        DateTimeOffset InicioProcessadoEm "opcional"
         DateTimeOffset CriadoEm
     }
 ```

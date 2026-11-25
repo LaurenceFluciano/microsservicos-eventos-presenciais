@@ -16,12 +16,17 @@ public class EventosController : ControllerBase
 {
 
     public EventoService EventoService;
+    private readonly string? _publicBaseUrl;
+
     private readonly IConfiguration _configuracao;
 
     public EventosController(EventoService eventoService, IConfiguration configuracao)
     {
         EventoService = eventoService;
         _configuracao = configuracao;
+
+        _publicBaseUrl = _configuracao["Eventos:PublicBaseUrl"];
+
     }
 
     [HttpPost]
@@ -233,5 +238,20 @@ public class EventosController : ControllerBase
         }
     }
 
+    [HttpGet("publicado/{slug}")]
+    [AllowAnonymous]
+    public async Task<IActionResult> ConsultarPublicadoPorSlug(
+        [FromRoute] string slug,
+        CancellationToken cancellationToken)
+    {
+        var evento = await EventoService
+            .ConsultarPublicadoPorSlugAsync(
+                slug,
+                cancellationToken,
+                _publicBaseUrl
+            );
+
+        return Ok(evento);
+    }
 
 }

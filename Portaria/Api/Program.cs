@@ -6,6 +6,7 @@ using Api.Application.Ports;
 using Api.Application.Services;
 using Api.Infrastructure.Authentication;
 using Api.Application.Mappers;
+using Api.Error;
 
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -99,6 +100,14 @@ builder.Services.AddScoped<PortariaService>();
 #region Mappers
 
 builder.Services.AddScoped<PortariaMapper>();
+
+#endregion
+
+#region Tratamento global de exceções
+
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+
+builder.Services.AddProblemDetails();
 
 #endregion
 
@@ -274,6 +283,8 @@ if (app.Environment.IsDevelopment())
 #endregion
 
 #region Pipeline HTTP
+
+app.UseExceptionHandler();
 
 app.UseHttpsRedirection();
 

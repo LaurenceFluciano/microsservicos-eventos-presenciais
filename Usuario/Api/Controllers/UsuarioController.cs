@@ -90,7 +90,6 @@ public sealed class UsuarioController : ControllerBase
         }
     }
 
-    [InternalApi]
     [HttpPost]
     public async Task<IActionResult> Criar(
         [FromBody] UsuarioInputDTO dto)
@@ -119,5 +118,26 @@ public sealed class UsuarioController : ControllerBase
         return usuarioDto is null
             ? NotFound()
             : Ok(usuarioDto);
+    }
+
+
+    [HttpGet]
+    [InternalApi]
+    public async Task<IActionResult> ObterUsuario(
+        [FromQuery] string email,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+            return BadRequest("Nessa versão filtro por e-mail é obrigatório.");
+
+        var usuario = await _usuarioServ.ObterPorEmail(
+            email,
+            cancellationToken
+        );
+
+        if (usuario is null)
+            return NotFound();
+
+        return Ok(usuario);
     }
 }

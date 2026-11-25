@@ -6,8 +6,8 @@ public sealed record IngressoValidacaoResponse(
     Guid EventoId,
     Guid OrganizadorId,
     string NomeEvento,
-    DateTime Inicio,
-    DateTime Fim,
+    DateTimeOffset Inicio,
+    DateTimeOffset Fim,
     string CodigoIngresso,
     DateTime EmitidoEm
 );

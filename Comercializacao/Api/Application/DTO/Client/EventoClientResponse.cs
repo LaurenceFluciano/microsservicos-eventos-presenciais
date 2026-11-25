@@ -6,8 +6,8 @@ public sealed record EventoClientResponse(
     string Nome,
     string Status,
     string StatusPublicacao,
-    DateTime Inicio,
-    DateTime Fim
+    DateTimeOffset Inicio,
+    DateTimeOffset Fim
 )
 {
     public bool EstaPublicado =>

@@ -65,6 +65,8 @@ Todos os microsserviços utilizam o framework `net10.0`.
 | Comercialização | `QRCoder` | 1.9.0 | Geração de QR Codes dos ingressos |
 | Portaria | `Microsoft.IdentityModel.Tokens` | 8.23.0 | Validação de assinaturas JWT |
 | Portaria | `System.IdentityModel.Tokens.Jwt` | 8.23.0 | Suporte a tokens JWT |
+| Eventos |  `RabbitMQ.Client` | 7.3.0 | Comunicação entre serviços |
+| Comercialização | `RabbitMQ.Client` | 7.3.0 | Comunicação entre serviços |
 
 As versões acima representam os arquivos `.csproj` fornecidos na preparação da documentação.
 

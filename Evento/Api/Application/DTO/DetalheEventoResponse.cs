@@ -15,8 +15,8 @@ public class DetalheEventoResponse
     public string Slug { get; init; } = string.Empty;
 
     // Período
-    public DateTime Inicio { get; init; }
-    public DateTime Fim { get; init; }
+    public DateTimeOffset Inicio { get; init; }
+    public DateTimeOffset Fim { get; init; }
 
     // Estados
     public EnumStatusPublicacaoEvento StatusPublicacao { get; init; }
@@ -24,6 +24,5 @@ public class DetalheEventoResponse
 
     // Datas de controle
     public DateTimeOffset CriadoEm { get; init; }
-    public DateTime? PublicadoEm { get; init; }
-    public DateTime? PublicacaoEncerradaEm { get; init; }
+    public DateTimeOffset? PublicadoEm { get; init; }
 }

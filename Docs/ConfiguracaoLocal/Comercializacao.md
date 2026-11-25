@@ -234,6 +234,7 @@ Com Comercialização em execução na porta `5298`, abra outro terminal e execu
 
 ```bash
 stripe listen \
+  --all-snapshot \
   --forward-to http://localhost:5298/api/webhooks/pagamentos
 ```
 

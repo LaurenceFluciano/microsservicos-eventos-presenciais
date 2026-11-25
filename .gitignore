@@ -64,6 +64,8 @@ coverage/
 .env
 .env.*
 !.env.example
+*.pem
+.dev-helper
 
 # Configurações locais com segredos
 **/appsettings.Local.json
@@ -76,3 +78,13 @@ coverage/
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# ==========================================
+# SQLite
+# ==========================================
+
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3

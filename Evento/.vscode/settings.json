@@ -1,0 +1,6 @@
+{
+  "dotnet.preferCSharpExtension": true,
+  "task.allowAutomaticTasks": "off",
+  "dotnet.server.sourceGeneratorExecution": "balanced",
+  "dotnet.fileBasedApps.enableAutomaticDiscovery": false
+}

@@ -88,7 +88,7 @@ Os requisitos funcionais estão agrupados conforme os quatro domínios principai
 | RF-09 | O sistema deve emitir os ingressos correspondentes após a confirmação do pagamento. |
 | RF-10 | O sistema deve permitir que o comprador consulte seus pedidos e ingressos adquiridos. |
 | RF-11 | O sistema deve permitir o cancelamento de pedidos elegíveis, conforme as regras de cancelamento estabelecidas. |
-| RF-12 | O sistema deve permitir que visitantes realizem compras de ingressos sem a necessidade de criar uma conta de acesso, informando nome, e-mail e telefone. |
+| RF-12 | O sistema deve permitir que visitantes realizem compras de ingressos sem a necessidade de criar uma conta de acesso. |
 | RF-24 | O sistema deve permitir que o organizador atualize o nome, o preço unitário e a quantidade total de ingressos de ofertas associadas aos eventos sob sua responsabilidade. |
 
 ### 5.4. Portaria

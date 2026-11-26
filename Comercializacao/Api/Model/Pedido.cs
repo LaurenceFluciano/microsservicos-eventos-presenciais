@@ -49,7 +49,7 @@ public class Pedido
 
     public DateTimeOffset CriadoEm { get; private init; }
 
-    public DateTime ExpiraEm { get; init; }
+    public DateTimeOffset ExpiraEm { get; init; }
 
     public ICollection<Pagamento> Pagamentos { get; set; } = new List<Pagamento>();
 
@@ -71,7 +71,7 @@ public class Pedido
         Quantidade = quantidade;
         ValorUnitario = valorUnitario;
         CriadoEm = DateTimeOffset.UtcNow;
-        ExpiraEm = DateTime.UtcNow.AddMinutes(60);
+        ExpiraEm = DateTimeOffset.UtcNow.AddMinutes(60);
         Status = StatusPedido.PENDENTE;
     }
 
@@ -107,7 +107,7 @@ public class Pedido
 
     public void MarcarEmProcessamento()
     {
-        if (!EstaPendente() || EstaExpirado(DateTime.UtcNow))
+        if (!EstaPendente() || EstaExpirado(DateTimeOffset.UtcNow))
             throw new DomainException(
                 "O pedido não está disponível para processamento."
             );
@@ -115,7 +115,7 @@ public class Pedido
         Status = StatusPedido.EM_PROCESSAMENTO;
     }
     
-    public void Expirar(DateTime agora)
+    public void Expirar(DateTimeOffset agora)
     {
         if (!EstaPendente())
             throw new DomainException(
@@ -130,7 +130,7 @@ public class Pedido
         Status = StatusPedido.EXPIRADO;
     }
 
-    public bool EstaExpirado(DateTime agora)
+    public bool EstaExpirado(DateTimeOffset agora)
     {
         return Status == StatusPedido.EXPIRADO ||
             (
@@ -148,7 +148,7 @@ public class Pedido
     public bool EstaEmProcessamento() => Status == StatusPedido.EM_PROCESSAMENTO;
 
 
-    public static Expression<Func<Pedido, bool>> ComprometidosEm(DateTime agora)
+    public static Expression<Func<Pedido, bool>> ComprometidosEm(DateTimeOffset agora)
     {
         return pedido =>
             pedido.Status == StatusPedido.CONFIRMADO || pedido.Status == StatusPedido.EM_PROCESSAMENTO ||

@@ -9,5 +9,5 @@ public sealed record IngressoValidacaoResponse(
     DateTimeOffset Inicio,
     DateTimeOffset Fim,
     string CodigoIngresso,
-    DateTime EmitidoEm
+    DateTimeOffset EmitidoEm
 );

@@ -34,20 +34,28 @@ Para os comportamentos solicitados ao sistema, consulte [Requisitos de Software]
 | Código | Regra de negócio | Requisitos relacionados |
 |---|---|---|
 | **RN-03** | A quantidade de ingressos comprometidos não pode ultrapassar a quantidade disponibilizada. | RF-05, RF-07 |
-| **RN-04** | Um pedido somente pode gerar ingressos válidos após a confirmação do pagamento. | RF-08, RF-09 |
+| **RN-04** | Um pedido somente pode gerar ingressos válidos após a confirmação do pagamento ou, quando gratuito, após a confirmação de sua elegibilidade para emissão. | RF-08, RF-09 |
 | **RN-07** | Somente ofertas vinculadas a eventos publicados podem ser consultadas publicamente. | RF-04, RF-06, RF-23 |
-| **RN-08** | A quantidade disponível de uma oferta deve considerar os ingressos vendidos e as reservas ativas. | RF-07, RF-09 |
+| **RN-08** | A quantidade disponível de uma oferta deve corresponder à quantidade total disponibilizada, descontando os ingressos associados a pedidos confirmados, em processamento e pendentes cujo prazo de reserva ainda não tenha expirado. | RF-07, RF-09 |
 | **RN-09** | Quando a quantidade disponível de ingressos de uma oferta atingir zero, o sistema deverá impedir automaticamente a realização de novas compras dessa oferta. | RF-07 |
 | **RN-19** | Um organizador somente pode configurar ofertas de ingressos para eventos sob sua responsabilidade. | RF-05 |
 | **RN-20** | O preço unitário de uma oferta de ingressos deve ser maior ou igual a zero. | RF-05 |
 | **RN-21** | A quantidade total de ingressos de uma oferta deve ser maior que zero. | RF-05 |
 | **RN-22** | Todo pedido de compra deverá possuir um prazo de pelo menos 30 minutos para a confirmação do pagamento, contado a partir de sua criação. | RF-07 |
-| **RN-23** | Um pedido cujo prazo de pagamento tenha expirado sem a confirmação do pagamento deverá ser considerado expirado. | RF-07, RF-11 |
-| **RN-24** | Um comprador somente poderá cancelar seus próprios pedidos enquanto estiverem pendentes de pagamento. | RF-07, RF-11 |
-| **RN-25** | O cancelamento ou a expiração de um pedido deverá liberar os ingressos reservados, restabelecendo sua disponibilidade na oferta correspondente. | RF-07, RF-11 |
-| **RN-26** | A quantidade total de ingressos de uma oferta não poderá ser reduzida para um valor inferior à soma dos ingressos vendidos e das reservas ativas. | RF-24 |
+| **RN-23** | Um pedido pendente cujo prazo de pagamento tenha terminado deverá ser considerado expirado. Pedidos em processamento ou confirmados não devem expirar pelo término do prazo de reserva. | RF-07, RF-11 |
+| **RN-24** | Um comprador somente poderá cancelar seus próprios pedidos enquanto estiverem pendentes de pagamento e dentro do prazo de reserva. | RF-07, RF-11 |s
+| **RN-25** | O cancelamento ou a expiração de um pedido deverá liberar os ingressos reservados, removendo-os da quantidade comprometida da oferta correspondente, sem alterar automaticamente sua elegibilidade para comercialização. | RF-07, RF-11 |
+| **RN-26** | A quantidade total de ingressos de uma oferta não poderá ser reduzida para um valor inferior à quantidade de ingressos comprometidos, conforme definido na RN-08. | RF-24 |
 | **RN-27** | Somente eventos agendados permitem a criação de novas ofertas de ingressos e novos pedidos. | RF-05, RF-07 |
 | **RN-28** | Ao atingir o horário de início do evento, suas ofertas ativas devem ser encerradas; ofertas esgotadas ou encerradas permanecem inalteradas. | RF-05, RF-07 |
+| **RN-29** | Somente ofertas de ingressos ativas e vinculadas a eventos publicados podem receber novos pedidos de compra. | RF-07 |
+| **RN-30** | Todo pedido deve estar associado a um comprador previamente cadastrado no sistema, independentemente de possuir uma conta de acesso. | RF-07, RF-12, RF-22 |
+| **RN-31** | A quantidade de ingressos solicitada em um pedido deve ser maior que zero. | RF-07 |
+| **RN-32** | O preço unitário dos ingressos de um pedido deve corresponder ao preço da oferta no momento de sua criação, não sendo afetado por alterações posteriores. | RF-07, RF-24 |
+| **RN-33** | Pedidos confirmados, em processamento, cancelados ou expirados não podem ser cancelados diretamente pelo comprador. | RF-11 |
+| **RN-34** | Um pedido não pode ser cancelado caso possua um pagamento confirmado. | RF-08, RF-11 |
+| **RN-35** | O cancelamento de um pedido deve invalidar suas cobranças ainda disponíveis e cancelar os pagamentos associados elegíveis, impedindo a realização de pagamentos posteriores. | RF-08, RF-11 |
+| **RN-36** | Pedidos de ingressos gratuitos não exigem a realização de uma transação financeira para a emissão dos ingressos. | RF-08, RF-09 |
 
 ### 2.4. Portaria
 
@@ -73,3 +81,28 @@ Por exemplo:
 - **RF-19** descreve o registro da entrada; **RN-05** impede a reutilização da credencial.
 - **RF-24** descreve a atualização de ofertas; **RN-26** impede a redução do estoque abaixo do comprometido.
 
+## 5. Limitações da versão acadêmica
+
+### 5.1. Cancelamento e estorno
+
+O cancelamento de pedidos está restrito a pedidos pendentes de pagamento e elegíveis conforme as regras de negócio.
+
+O estorno total ou parcial de pagamentos confirmados não faz parte do escopo desta versão.
+
+A existência do estado `ESTORNADO` no modelo de pagamentos não representa a implementação de uma funcionalidade de estorno. Adicionamos, pois no futuro pretendemos adicionar essa possibilidade.
+
+### 5.2. Identificação de compradores sem conta
+
+A realização de pedidos sem conta de acesso utiliza o endereço de e-mail para identificar um comprador previamente cadastrado.
+
+A identificação de um cadastro pelo endereço de e-mail não comprova sua titularidade e não constitui um mecanismo de autenticação.
+
+A autorização de operações sobre pedidos e ingressos constitui uma limitação de segurança da versão acadêmica quando realizada sem mecanismos de comprovação de identidade.
+
+### 5.3. Consistência distribuída
+
+O cancelamento de cobranças externas e a persistência das alterações locais não participam de uma única transação atômica.
+
+Falhas de comunicação, concorrência e indisponibilidade de serviços externos podem produzir inconsistências que exigem mecanismos adicionais de recuperação e reconciliação.
+
+A implementação de mecanismos avançados de recuperação distribuída constitui uma possibilidade de evolução do sistema.

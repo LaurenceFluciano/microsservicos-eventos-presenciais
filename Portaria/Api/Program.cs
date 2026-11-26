@@ -274,11 +274,10 @@ app.UseForwardedHeaders(forwardedHeadersOptions);
 
 #region Documentação
 
-if (app.Environment.IsDevelopment())
-{
-    app.MapOpenApi();
-    app.MapScalarApiReference();
-}
+
+app.MapOpenApi();
+app.MapScalarApiReference();
+
 
 #endregion
 

@@ -9,29 +9,52 @@ A integração de pagamentos utiliza a API da Stripe, com Stripe Checkout e webh
 Para informações complementares, consulte:
 
 - [Pré-requisitos](../PreRequisitos.md) — ferramentas, dependências e geração das chaves RSA.
+
 - [Referência técnica de configurações](../Configuracoes.md) — propriedades exigidas pela aplicação.
+
+Para a Sandbox remota, consulte [Implantação](../Implantacao.md). As configurações abaixo são exclusivamente locais; no Render utiliza-se `RabbitMQ__Uri` e o segredo do webhook remoto.
 
 ## Sumário
 
 1. [Acessar o diretório do projeto](#1-acessar-o-diretório-do-projeto)
+
 2. [Configurar os User Secrets](#2-configurar-os-user-secrets)
+
    - [Configurar a API Key](#21-configurar-a-api-key)
+
    - [Configurar a chave pública RSA](#22-configurar-a-chave-pública-rsa)
+
    - [Configurar a chave secreta da Stripe](#23-configurar-a-chave-secreta-da-stripe)
+
    - [Configurar o segredo do webhook](#24-configurar-o-segredo-do-webhook)
+   - [Configurar o RabbitMQ](#25-configurar-o-rabbitmq)
+
 3. [Verificar as configurações da aplicação](#3-verificar-as-configurações-da-aplicação)
+
 4. [Executar o microsserviço](#4-executar-o-microsserviço)
+
 5. [Stripe CLI — Configuração e comandos](#5-stripe-cli--configuração-e-comandos)
+
    - [Verificar a instalação](#51-verificar-a-instalação)
+
    - [Autenticar o Stripe CLI](#52-autenticar-o-stripe-cli)
+
    - [Verificar a conta conectada](#53-verificar-a-conta-conectada)
+
    - [Iniciar o listener de webhooks](#54-iniciar-o-listener-de-webhooks)
+
    - [Escutar apenas os eventos utilizados pelo projeto](#55-escutar-apenas-os-eventos-utilizados-pelo-projeto)
+
    - [Simular um evento](#56-simular-um-evento)
+
 6. [Consultar sessões e eventos da Stripe](#6-consultar-sessões-e-eventos-da-stripe)
+
 7. [Testar um pagamento completo](#7-testar-um-pagamento-completo)
+
 8. [Solução de problemas](#8-solução-de-problemas)
+
 9. [Configuração mínima esperada](#9-configuração-mínima-esperada)
+
 10. [Referências](#10-referências)
 
 ## 1. Acessar o diretório do projeto
@@ -161,7 +184,6 @@ As seguintes configurações gerais já estão definidas em `appsettings.json`:
 | `Jwt:Issuer` | `Usuario` |
 | `Jwt:Audience` | `EventosPresenciais` |
 
-
 O arquivo `appsettings.Development.json` contém as configurações locais, incluindo:
 
 | Configuração | Valor de desenvolvimento |
@@ -244,7 +266,7 @@ Portaria deve estar disponível durante a emissão das credenciais de acesso dos
 
 O RabbitMQ deve estar em execução antes da inicialização de Comercialização.
 
----
+**---**
 
 ## 5. Stripe CLI — Configuração e comandos
 
@@ -291,8 +313,8 @@ Esse comando é útil para confirmar que as operações estão sendo realizadas 
 Com Comercialização em execução na porta `5298`, abra outro terminal e execute:
 
 ```bash
-stripe listen \
-  --all-snapshot \
+stripe listen \\
+  --all-snapshot \\
   --forward-to http://localhost:5298/api/webhooks/pagamentos
 ```
 
@@ -333,8 +355,8 @@ O webhook de Comercialização processa os seguintes eventos:
 Para escutar somente esses eventos:
 
 ```bash
-stripe listen \
-  --events checkout.session.completed,checkout.session.async_payment_succeeded,checkout.session.async_payment_failed \
+stripe listen \\
+  --events checkout.session.completed,checkout.session.async_payment_succeeded,checkout.session.async_payment_failed \\
   --forward-to http://localhost:5298/api/webhooks/pagamentos
 ```
 
@@ -358,7 +380,7 @@ Por isso, a aplicação pode rejeitar ou não encontrar a sessão associada.
 
 **Esse comando não substitui um teste completo de compra.**
 
----
+**---**
 
 ## 6. Consultar sessões e eventos da Stripe
 
@@ -387,7 +409,9 @@ Recupera os dados de uma sessão Checkout.
 Verifique principalmente:
 
 - `id`: identificador da sessão.
+
 - `status`: estado da sessão.
+
 - `payment_status`: situação do pagamento.
 
 Para um pagamento confirmado por cartão, normalmente esperamos:
@@ -432,7 +456,7 @@ Exibe os parâmetros disponíveis para reenviar eventos a destinos registrados n
 Um exemplo para um endpoint de webhook previamente cadastrado seria:
 
 ```bash
-stripe events resend evt_ID_DO_EVENTO \
+stripe events resend evt_ID_DO_EVENTO \\
   --webhook-endpoint we_ID_DO_ENDPOINT
 ```
 
@@ -442,21 +466,30 @@ Esse procedimento exige um identificador real de endpoint (`we_...`).
 
 Quando um pagamento foi concluído, mas seu webhook local falhou, não crie outro pagamento automaticamente. Primeiro consulte a sessão original e determine como reprocessar sua confirmação com segurança.
 
----
+**---**
 
 ## 7. Testar um pagamento completo
 
 Para validar a integração, execute o seguinte fluxo:
 
 1. Inicie Usuários, Eventos e Comercialização.
+
 2. Inicie Portaria, caso deseje validar também a emissão de credenciais.
+
 3. Execute o listener do Stripe CLI.
+
 4. Crie um evento e uma oferta de ingresso ativa.
+
 5. Publique o evento.
+
 6. Cadastre um comprador em Usuários, caso ainda não exista, e crie um pedido em Comercialização informando o e-mail do comprador, a oferta de ingresso e a quantidade desejada.
+
 7. Consulte o pedido e obtenha a URL de Checkout.
+
 8. Abra a URL de Checkout no navegador.
+
 9. Realize um pagamento utilizando os dados de teste fornecidos pela Stripe.
+
 10. Observe o webhook e verifique o processamento do pedido.
 
 Exemplo de corpo da requisição para criação de um pedido:
@@ -510,7 +543,7 @@ Quando a integração com Portaria estiver funcionando, o sistema também dever�
 
 O redirecionamento para a página de sucesso do Checkout não comprova, sozinho, que o pagamento foi confirmado pelo backend.
 
----
+**---**
 
 ## 8. Solução de problemas
 
@@ -530,7 +563,6 @@ O redirecionamento para a página de sucesso do Checkout não comprova, sozinho,
 | Falha de comunicação com Usuários | Verificar `Services:Usuarios:BaseUrl`, API Key e disponibilidade do microsserviço |
 | Pedido ou oferta recusada | Verificar se o evento está com status `AGENDADO` |
 | Ofertas não encerradas automaticamente | Verificar a disponibilidade do RabbitMQ e a execução do consumidor |
-
 
 ### 8.1. Incompatibilidade de versões Stripe
 
@@ -561,7 +593,7 @@ Não considere esses problemas resolvidos simplesmente repetindo operações ind
 
 O processamento deve ser idempotente e permitir recuperação de falhas sem duplicar pagamentos, ingressos ou credenciais.
 
----
+**---**
 
 ## 9. Configuração mínima esperada
 
@@ -588,15 +620,20 @@ O processamento deve ser idempotente e permitir recuperação de falhas sem dupl
 
 Com essas configurações, o microsserviço Comercialização estará preparado para execução e testes de pagamentos em ambiente de desenvolvimento.
 
----
+**---**
 
 ## 10. Referências
 
 - [Stripe CLI — documentação oficial](https://docs.stripe.com/stripe-cli)
+
 - [Stripe CLI — instalação](https://docs.stripe.com/cli/install)
+
 - [Stripe — webhooks](https://docs.stripe.com/webhooks)
+
 - [Stripe — cartões e pagamentos de teste](https://docs.stripe.com/testing)
+
 - [Stripe — Checkout](https://docs.stripe.com/payments/checkout)
+
 - [Stripe Dashboard — API Keys](https://dashboard.stripe.com/test/apikeys)
 
 Para informações sobre as demais configurações do projeto, consulte [Configuracoes.md](../Configuracoes.md).

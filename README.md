@@ -6,15 +6,39 @@ A solução é voltada, inicialmente, a pequenos organizadores de apresentaçõe
 
 ## Sumário
 
+- [Sandbox pública](#sandbox-pública)
 - [Problema e objetivo](#problema-e-objetivo)
+
 - [Funcionalidades e escopo](#funcionalidades-e-escopo)
+
 - [Arquitetura](#arquitetura)
-- [Integrações entre microsserviços](#integrações-entre-microsserviços)
-- [Tecnologias](#tecnologias)
-- [Como executar localmente](#como-executar-localmente)
-- [Testes](#testes)
+
 - [Documentação](#documentação)
+
+- [Integrações entre microsserviços](#integrações-entre-microsserviços)
+
+- [Tecnologias](#tecnologias)
+
+- [Como executar localmente](#como-executar-localmente)
+
+- [Testes](#testes)
+
+
+
 - [Limitações e evolução](#limitações-e-evolução)
+
+## Microsserviço com Sandbox pública
+
+Os quatro serviços estão implantados no Render.
+
+| Microsserviço | API pública | Acesso informado na release |
+|---|---|---|
+| Usuários | [Usuários](https://microsservicos-eventos-presenciais.onrender.com) | [Abrir](https://microsservicos-eventos-presenciais.onrender.com/scalar/) |
+| Eventos | [Eventos](https://microsservicos-eventos-presenciais-hctr.onrender.com) | [Abrir](https://microsservicos-eventos-presenciais-hctr.onrender.com/scalar) |
+| Comercialização | [Comercialização](https://comercializacao.onrender.com) | [Abrir](https://comercializacao.onrender.com) |
+| Portaria | [Portaria](https://portaria-gdve.onrender.com) | [Abrir](https://portaria-gdve.onrender.com) |
+
+Para mais informação consulte [Implantação](Docs/Implantacao.md).
 
 ## Problema e objetivo
 
@@ -28,9 +52,12 @@ O problema foi identificado durante a análise inicial do domínio; **as hipóte
 
 O sistema foi projetado para atender aos seguintes fluxos:
 
-- **Usuários:** cadastro, verificação de e-mail, autenticação e gerenciamento de informações cadastrais.
+- **Usuários:** cadastro com ou sem conta, autenticação e gerenciamento cadastral. O envio real de e-mails permanece pendente (FakeEmailSender).
+
 - **Eventos:** cadastro, atualização, publicação, consulta e compartilhamento de eventos por endereço público.
-- **Comercialização:** criação e consulta de ofertas, pedidos, processamento de pagamentos via Stripe Checkout e emissão de ingressos digitais.
+
+- **Comercialização:** criação e consulta de ofertas, pedidos por e-mail sem conta, encerramento automático de ofertas, processamento de pagamentos via Stripe Checkout e emissão de ingressos digitais.
+
 - **Portaria:** criação de credenciais de acesso, validação de ingressos e registro de utilização para evitar entradas repetidas.
 
 **Na versão atual, a validação dos ingressos é responsabilidade do organizador do evento.** A delegação desse trabalho a colaboradores ou dispositivos autorizados é uma possibilidade de evolução.
@@ -39,7 +66,7 @@ O catálogo completo de funcionalidades, inclusive as planejadas, está em [Requ
 
 ## Arquitetura
 
-A aplicação é composta por **quatro microsserviços ASP.NET Core**, com **bancos SQLite independentes** e comunicação por APIs REST sobre HTTP.
+A aplicação é composta por **quatro microsserviços ASP.NET Core**, com **bancos SQLite independentes** e comunicação síncrona por HTTP REST e assíncrona por RabbitMQ (AMQP).
 
 | Microsserviço | Responsabilidade | Porta local |
 |---|---|---|
@@ -55,13 +82,17 @@ flowchart LR
     E["Eventos"]
     C["Comercialização"]
     P["Portaria"]
-    S["Stripe"]
-
+    S["Stripe Sandbox"]
+    R["RabbitMQ / CloudAMQP"]
     CLIENTE --> U
     CLIENTE --> E
     CLIENTE --> C
     CLIENTE --> P
-    E <-->|"Consultas REST"| C
+    E -->|"GET ofertas válidas"| C
+    C -->|"GET estado do evento"| E
+    C -->|"GET comprador por e-mail"| U
+    E -->|"evento.iniciado"| R
+    R -->|"Encerrar ofertas"| C
     C -->|"Criação de credenciais"| P
     P -->|"Consulta de ingressos"| C
     C <-->|"Checkout e webhooks"| S
@@ -73,6 +104,20 @@ Internamente, os serviços utilizam uma **organização por responsabilidades** 
 
 A descrição detalhada, incluindo autenticação, contratos de comunicação, fluxos e consistência distribuída, está em [Arquitetura](Docs/Arquitetura.md). As entidades e seus relacionamentos internos estão em [Modelagem](Docs/Modelagem.md).
 
+## Documentação
+
+| Documento | Conteúdo |
+|---|---|
+| [Requisitos de Software](Docs/RequisitosSoftware.md) | Propósito, atores, escopo e requisitos funcionais RF-01 a RF-24 |
+| [Regras de Negócio](Docs/RegrasNegocio.md) | Restrições de domínio e rastreabilidade com os requisitos |
+| [Arquitetura](Docs/Arquitetura.md) | Microsserviços, integrações, segurança e decisões arquiteturais |
+| [Modelagem](Docs/Modelagem.md) | Entidades e relacionamentos internos de cada microsserviço |
+| [Pré-requisitos](Docs/PreRequisitos.md) | Ferramentas, dependências e geração de chaves RSA |
+| [Configurações](Docs/Configuracoes.md) | Referência das propriedades de configuração |
+| [Configuração local](Docs/ConfiguracaoLocal/) | Instruções individuais para preparar e executar os serviços |
+| [Implantação](Docs/Implantacao.md) | Sandbox remota, variáveis, infraestrutura e diagnóstico |
+
+
 ## Integrações entre microsserviços
 
 O trabalho acadêmico exige **pelo menos duas consultas entre serviços e uma alteração de dados solicitada por outro serviço**. O projeto contempla as seguintes integrações principais:
@@ -80,10 +125,11 @@ O trabalho acadêmico exige **pelo menos duas consultas entre serviços e uma al
 | Origem | Destino | Tipo | Objetivo |
 |---|---|---|---|
 | Eventos | Comercialização | **Consulta** | Verificar se o evento possui oferta válida antes da publicação |
-| Comercialização | Eventos | **Consulta** | Obter dados do evento necessários à comercialização |
+| Comercialização | Eventos | **Consulta** | Verificar estado AGENDADO na criação de ofertas e pedidos; validar propriedade/publicação conforme operação |
 | Comercialização | Portaria | **Alteração** | Solicitar a criação das credenciais dos ingressos emitidos |
-
-Há também a consulta **Portaria → Comercialização** para obter informações do ingresso durante a validação.
+| Comercialização | Usuários | Consulta HTTP | Identificar comprador previamente cadastrado por e-mail |
+| Portaria | Comercialização | Consulta HTTP | Consultar ingresso durante validação |
+| Eventos | Comercialização | Notificação AMQP | Encerrar ofertas ativas ao iniciar evento |
 
 A integração com a **Stripe** ocorre por meio da criação de sessões de Checkout e do recebimento de webhooks assinados. O redirecionamento do navegador após o Checkout, isoladamente, **não comprova a confirmação do pagamento**.
 
@@ -105,10 +151,14 @@ A integração com a **Stripe** ocorre por meio da criação de sessões de Chec
 | **QRCoder** | Geração de QR Codes dos ingressos |
 | **OpenAPI / Scalar** | Documentação e exploração das APIs |
 | **xUnit** | Testes automatizados nos projetos que os possuem |
+| RabbitMQ / AMQP / RabbitMQ.Client | Mensageria entre Eventos e Comercialização |
+| BackgroundService | Detecção periódica e consumo de mensagens |
+| Docker / Docker Compose | Imagens dos serviços e broker local |
+| Render / CloudAMQP | Hospedagem remota gratuita |
 
 ## Como executar localmente
 
-O ambiente de desenvolvimento requer **.NET SDK 10, Git e OpenSSL**, além das credenciais de teste da Stripe para executar o fluxo de pagamentos.
+O ambiente de desenvolvimento requer **.NET SDK 10, Git, OpenSSL e RabbitMQ (Docker Compose recomendado)**, além das credenciais de teste da Stripe para executar o fluxo de pagamentos.
 
 **1. Clone o repositório:**
 
@@ -128,7 +178,15 @@ cd microsservicos-eventos-presenciais
 | Comercialização | [Configuração de Comercialização](Docs/ConfiguracaoLocal/Comercializacao.md) | `http://localhost:5298` |
 | Portaria | [Configuração de Portaria](Docs/ConfiguracaoLocal/Portaria.md) | `http://localhost:5299` |
 
-**4. Execute cada aplicação em seu próprio terminal**, na pasta `Api` correspondente:
+**4. Inicie o RabbitMQ na raiz do repositório:**
+
+```bash
+docker compose up -d rabbitmq
+```
+
+Inicie Usuários, Portaria, Comercialização e Eventos, nessa ordem recomendada (Comercialização declara a fila antes do produtor).
+
+**Execute cada aplicação em seu próprio terminal**, na pasta `Api` correspondente:
 
 ```bash
 dotnet restore
@@ -151,15 +209,6 @@ dotnet test
 
 Os testes automatizados não substituem os testes de integração entre os quatro serviços, especialmente os fluxos de pagamento, emissão de ingressos e check-in.
 
-## Documentação
+## Limitações e evolução
 
-| Documento | Conteúdo |
-|---|---|
-| [Requisitos de Software](Docs/RequisitosSoftware.md) | Propósito, atores, escopo e requisitos funcionais RF-01 a RF-24 |
-| [Regras de Negócio](Docs/RegrasNegocio.md) | Restrições de domínio e rastreabilidade com os requisitos |
-| [Arquitetura](Docs/Arquitetura.md) | Microsserviços, integrações, segurança e decisões arquiteturais |
-| [Modelagem](Docs/Modelagem.md) | Entidades e relacionamentos internos de cada microsserviço |
-| [Pré-requisitos](Docs/PreRequisitos.md) | Ferramentas, dependências e geração de chaves RSA |
-| [Configurações](Docs/Configuracoes.md) | Referência das propriedades de configuração |
-| [Configuração local](Docs/ConfiguracaoLocal/) | Instruções individuais para preparar e executar os serviços |
-
+O ambiente gratuito possui suspensão por inatividade, cold start, franquias e armazenamento efêmero. Os bancos SQLite podem ser perdidos durante reinicializações. O processamento em segundo plano não é contínuo e webhooks podem atrasar. Não use dados pessoais reais. A validação remota completa, o RF-11, envio real de e-mails, rate limiting e melhorias de resiliência permanecem pendentes ou em avaliação. Não há garantia de disponibilidade, transações distribuídas ou processamento exatamente uma vez.

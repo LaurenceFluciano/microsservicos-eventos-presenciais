@@ -46,6 +46,8 @@ Para os comportamentos solicitados ao sistema, consulte [Requisitos de Software]
 | **RN-24** | Um comprador somente poderá cancelar seus próprios pedidos enquanto estiverem pendentes de pagamento. | RF-07, RF-11 |
 | **RN-25** | O cancelamento ou a expiração de um pedido deverá liberar os ingressos reservados, restabelecendo sua disponibilidade na oferta correspondente. | RF-07, RF-11 |
 | **RN-26** | A quantidade total de ingressos de uma oferta não poderá ser reduzida para um valor inferior à soma dos ingressos vendidos e das reservas ativas. | RF-24 |
+| **RN-27** | Somente eventos agendados permitem a criação de novas ofertas de ingressos e novos pedidos. | RF-05, RF-07 |
+| **RN-28** | Ao atingir o horário de início do evento, suas ofertas ativas devem ser encerradas; ofertas esgotadas ou encerradas permanecem inalteradas. | RF-05, RF-07 |
 
 ### 2.4. Portaria
 

@@ -196,26 +196,51 @@ builder.Services.AddSingleton(sp =>
     var configuration =
         sp.GetRequiredService<IConfiguration>();
 
+    var environment =
+        sp.GetRequiredService<IHostEnvironment>();
+
+    if (environment.IsDevelopment())
+    {
+        return new ConnectionFactory
+        {
+            HostName = configuration["RabbitMQ:HostName"]
+                ?? "localhost",
+
+            Port = configuration.GetValue<int>(
+                "RabbitMQ:Port", 5672
+            ),
+
+            UserName = configuration["RabbitMQ:UserName"]
+                ?? throw new InvalidOperationException(
+                    "Usuário RabbitMQ não configurado."
+                ),
+
+            Password = configuration["RabbitMQ:Password"]
+                ?? throw new InvalidOperationException(
+                    "Senha RabbitMQ não configurada."
+                ),
+
+            AutomaticRecoveryEnabled = true
+        };
+    }
+
+    var uri = configuration["RabbitMQ:Uri"];
+
+    if (string.IsNullOrWhiteSpace(uri))
+    {
+        throw new InvalidOperationException(
+            "URI do RabbitMQ não configurada."
+        );
+    }
+
     return new ConnectionFactory
     {
-        HostName = configuration["RabbitMQ:HostName"]
-            ?? "localhost",
+        Uri = new Uri(uri),
 
-        Port = configuration.GetValue<int>(
-            "RabbitMQ:Port", 5672
-        ),
+        AutomaticRecoveryEnabled = true,
 
-        UserName = configuration["RabbitMQ:UserName"]
-            ?? throw new InvalidOperationException(
-                "Usuário RabbitMQ não configurado."
-            ),
-
-        Password = configuration["RabbitMQ:Password"]
-            ?? throw new InvalidOperationException(
-                "Senha RabbitMQ não configurada."
-            ),
-
-        AutomaticRecoveryEnabled = true
+        NetworkRecoveryInterval =
+            TimeSpan.FromSeconds(5)
     };
 });
 

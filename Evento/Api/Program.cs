@@ -332,11 +332,10 @@ app.UseExceptionHandler();
 
 #region DOCUMENTAÇÃO DA API
 
-if (app.Environment.IsDevelopment())
-{
-    app.MapOpenApi();
-    app.MapScalarApiReference();
-}
+
+app.MapOpenApi();
+app.MapScalarApiReference();
+
 
 #endregion
 

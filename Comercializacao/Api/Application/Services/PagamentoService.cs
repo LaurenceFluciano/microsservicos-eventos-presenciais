@@ -39,9 +39,12 @@ public class PagamentoService
                 cancellationToken);
 
         if (pedido is null ||
-            !pedido.EstaPendente() ||
-            pedido.IsGratis)
+                !pedido.EstaPendente() ||
+                pedido.EstaExpirado(DateTimeOffset.UtcNow) ||
+                pedido.IsGratis
+                )
             return;
+            
 
         var pagamentoExistente = await _dataContext.Pagamentos
             .FirstOrDefaultAsync(
@@ -72,13 +75,22 @@ public class PagamentoService
         CancellationToken cancellationToken = default)
     {
         var pagamento = await _dataContext.Pagamentos
+            .Include(p => p.Pedido)
             .FirstOrDefaultAsync(
                 p => p.Id == pagamentoId,
-                cancellationToken);
+                cancellationToken
+            );
 
         if (pagamento is null ||
-            pagamento.Status != StatusPagamento.PENDENTE)
+            pagamento.Status != StatusPagamento.PENDENTE ||
+            !pagamento.Pedido.EstaPendente() ||
+            pagamento.Pedido.EstaExpirado(DateTimeOffset.UtcNow))
             return;
+        
+
+
+        
+        
 
         var checkout = await _gatewayPagamento
             .CriarSessaoPagamentoAsync(
@@ -205,13 +217,18 @@ public class PagamentoService
         Guid pedidoId,
         CancellationToken cancellationToken = default)
     {
+        var agora = DateTimeOffset.UtcNow;
+
         return await _dataContext.Pagamentos
             .AsNoTracking()
-            .Where(p => p.PedidoId == pedidoId &&
-                        p.Status != StatusPagamento.CONFIRMADO &&
-                        p.Status != StatusPagamento.CANCELADO)
+            .Where(p =>
+                p.PedidoId == pedidoId &&
+                p.Pedido.Status == StatusPedido.PENDENTE &&
+                p.Pedido.ExpiraEm > agora &&
+                p.Status == StatusPagamento.COBRANCA_GERADA
+            )
             .Select(p => p.UrlCheckout)
             .FirstOrDefaultAsync(cancellationToken);
     }
-
+    
 }

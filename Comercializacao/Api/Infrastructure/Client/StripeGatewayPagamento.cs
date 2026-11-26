@@ -102,4 +102,16 @@ public sealed class StripeGatewayPagamento : IGatewayPagamento
             session.Url
         );
     }
+
+
+    public async Task CancelarSessaoPagamentoAsync(
+        string idSessaoStripe,
+        CancellationToken cancellationToken = default)
+    {
+        await _stripe.V1.Checkout.Sessions.ExpireAsync(
+            idSessaoStripe,
+            cancellationToken: cancellationToken
+        );
+    }
+
 }

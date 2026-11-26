@@ -23,6 +23,7 @@ using Microsoft.IdentityModel.Tokens;
 using RabbitMQ.Client;
 using Scalar.AspNetCore;
 using Stripe;
+using Api.Infrastructure.Workers;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -123,6 +124,9 @@ builder.Services.AddScoped<PedidoService>();
 builder.Services.AddScoped<IngressoService>();
 builder.Services.AddScoped<ConfirmarPedido>();
 builder.Services.AddScoped<IngressoDigitalService>();
+builder.Services.AddScoped<ExpirarPedido>();
+builder.Services.AddScoped<CancelarPedido>();
+builder.Services.AddHostedService<PedidoExpiracaoWorker>();
 
 #endregion
 

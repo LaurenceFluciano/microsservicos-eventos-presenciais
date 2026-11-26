@@ -137,28 +137,19 @@ public class PedidoService
                 "Oferta do pedido não encontrada."
             );
 
-        var pagamentos = await _dataContext.Pagamentos
+        var pagamento = await _dataContext.Pagamentos
             .AsNoTracking()
             .Where(p =>
                 p.PedidoId == pedidoId &&
                 p.Status != StatusPagamento.CANCELADO &&
                 p.Status != StatusPagamento.ESTORNADO)
-            .Select(p => new
-            {
-                p.Id,
-                p.UrlCheckout,
-                p.CriadoEm
-            })
-            .ToListAsync(cancellationToken);
-
-        var pagamento = pagamentos
             .OrderByDescending(p => p.CriadoEm)
             .Select(p => new PagamentoResponse(
                 p.Id,
                 p.UrlCheckout
             ))
-            .FirstOrDefault();
-
+            .FirstOrDefaultAsync(cancellationToken);
+            
         var ingressos = await _dataContext.Ingressos
             .AsNoTracking()
             .Where(i => i.PedidoId == pedidoId)
@@ -166,7 +157,7 @@ public class PedidoService
             .Select(i => new IngressoResponse(
                 i.Id,
                 i.CodigoIngresso,
-                i.EmitidoEm
+                HorarioBrasilia.ParaLocal(i.EmitidoEm)
             ))
             .ToListAsync(cancellationToken);
 
@@ -176,7 +167,7 @@ public class PedidoService
             OfertaId: pedido.OfertaId,
             Quantidade: pedido.Quantidade,
             Status: pedido.Status,
-            ExpiraEm: pedido.ExpiraEm,
+            ExpiraEm: HorarioBrasilia.ParaLocal(pedido.ExpiraEm),
             Pagamento: pagamento,
             Ingressos: ingressos
         );

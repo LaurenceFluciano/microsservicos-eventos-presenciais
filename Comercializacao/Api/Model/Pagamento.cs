@@ -93,6 +93,25 @@ public class Pagamento
         return true;
     }
 
+    public bool Cancelar()
+    {
+        if (Status == StatusPagamento.CANCELADO)
+            return false;
+
+        if (Status != StatusPagamento.PENDENTE &&
+            Status != StatusPagamento.COBRANCA_GERADA &&
+            Status != StatusPagamento.RECUSADO)
+        {
+            throw new DomainException(
+                "O pagamento não pode ser cancelado no estado atual."
+            );
+        }
+
+        Status = StatusPagamento.CANCELADO;
+
+        return true;
+    }
+    
     #endregion
 
 

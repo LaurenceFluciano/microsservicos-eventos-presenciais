@@ -10,7 +10,7 @@ public record DetalhePedidoResponse(
     Guid OfertaId,
     int Quantidade,
     StatusPedido Status,
-    DateTime ExpiraEm,
+    DateTimeOffset ExpiraEm,
     PagamentoResponse? Pagamento,
     List<IngressoResponse> Ingressos
 );

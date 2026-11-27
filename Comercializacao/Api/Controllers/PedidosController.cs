@@ -16,17 +16,20 @@ public class PedidosController : ControllerBase
     private readonly PedidoService _pedidoService;
     private readonly PagamentoService _pagamentoService;
     private readonly IUsuarioClient _usuarioClient;
+    private readonly CancelarPedido _cancelarPedido;
 
     
 
     public PedidosController(
         PedidoService pedidoService,
         PagamentoService pagamentoService,
-        IUsuarioClient usuarioClient)
+        IUsuarioClient usuarioClient,
+        CancelarPedido cancelarPedido)
     {
         _pedidoService = pedidoService;
         _pagamentoService = pagamentoService;
         _usuarioClient = usuarioClient;
+        _cancelarPedido = cancelarPedido;
     }
 
     [HttpPost]
@@ -97,5 +100,18 @@ public class PedidosController : ControllerBase
         {
             UrlCheckout = url
         });
+    }
+
+    [HttpPost("{pedidoId:guid}/cancelar")]
+    public async Task<IActionResult> Cancelar(
+        [FromRoute] Guid pedidoId,
+        CancellationToken cancellationToken)
+    {
+        await _cancelarPedido.Cancelar(
+            new CancelarPedidoRequest(pedidoId),
+            cancellationToken
+        );
+
+        return NoContent();
     }
 }

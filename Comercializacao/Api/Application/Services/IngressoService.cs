@@ -150,7 +150,7 @@ public class IngressoService
             Inicio: HorarioBrasilia.ParaLocal(evento.Inicio),
             Fim: HorarioBrasilia.ParaLocal(evento.Fim),
             CodigoIngresso: ingresso.CodigoIngresso,
-            EmitidoEm: ingresso.EmitidoEm,
+            EmitidoEm: HorarioBrasilia.ParaLocal(ingresso.EmitidoEm),
             UrlValidacao: ingressoDigital.UrlConfirmacao,
             QrCodeDataUri: ingressoDigital.QrCodeDataUri
         );
@@ -204,7 +204,7 @@ public class IngressoService
             Inicio: evento.Inicio,
             Fim: evento.Fim,
             CodigoIngresso: ingresso.CodigoIngresso,
-            EmitidoEm: ingresso.EmitidoEm
+            EmitidoEm: HorarioBrasilia.ParaLocal(ingresso.EmitidoEm)
         );
     }
 

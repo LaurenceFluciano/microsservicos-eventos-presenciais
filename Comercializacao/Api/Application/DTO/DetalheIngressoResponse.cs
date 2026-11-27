@@ -8,7 +8,7 @@ public sealed record DetalheIngressoResponse(
     DateTimeOffset Inicio,
     DateTimeOffset Fim,
     string CodigoIngresso,
-    DateTime EmitidoEm,
+    DateTimeOffset EmitidoEm,
     string UrlValidacao,
     string QrCodeDataUri
 );

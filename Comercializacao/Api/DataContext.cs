@@ -1,4 +1,5 @@
 ﻿
+using Api.Infrastructure.Converters;
 using Api.Model;
 using Microsoft.EntityFrameworkCore;
 
@@ -9,6 +10,17 @@ public class DataContext : DbContext
     public DataContext(DbContextOptions<DataContext> options)
         : base(options)
     {
+
+    }
+
+    protected override void ConfigureConventions(
+        ModelConfigurationBuilder configurationBuilder)
+    {
+        base.ConfigureConventions(configurationBuilder);
+
+        configurationBuilder
+            .Properties<DateTimeOffset>()
+            .HaveConversion<UtcDateTimeOffsetConverter>();
     }
 
     public DbSet<Ingresso> Ingressos => Set<Ingresso>();
@@ -21,6 +33,8 @@ public class DataContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
+        
 
         // ========================================
         // INGRESSO
@@ -134,13 +148,19 @@ public class DataContext : DbContext
             entity.Property(p => p.CriadoEm)
                 .IsRequired();
 
-            entity.Property(p => p.ExpiraEm);
+            entity.Property(p => p.ExpiraEm)
+                .IsRequired();
 
             entity.HasOne(p => p.OfertaIngresso)
                 .WithMany(o => o.Pedidos)
                 .HasForeignKey(p => p.OfertaId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            entity.HasIndex(p => new
+            {
+                p.Status,
+                p.ExpiraEm
+            });
             entity.HasIndex(p => p.CompradorId);
             entity.HasIndex(p => p.Status);
         });

@@ -27,7 +27,6 @@ A solução utiliza **arquitetura de microsserviços**, organizada em quatro apl
 
 A comunicação entre serviços ocorre por meio de APIs REST sobre HTTP, para operações síncronas, e RabbitMQ, para a propagação assíncrona de acontecimentos relacionados ao ciclo de vida dos eventos.
 
-O projeto foi concebido para cumprir os requisitos acadêmicos de quatro microsserviços, pelo menos duas integrações de leitura e uma integração que provoque alteração de dados em outro microsserviço.
 
 ```mermaid
 flowchart LR

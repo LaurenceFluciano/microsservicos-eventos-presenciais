@@ -28,8 +28,8 @@ namespace Api.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTime>("EmitidoEm")
-                        .HasColumnType("TEXT");
+                    b.Property<long>("EmitidoEm")
+                        .HasColumnType("INTEGER");
 
                     b.Property<Guid>("PedidoId")
                         .HasColumnType("TEXT");
@@ -50,8 +50,8 @@ namespace Api.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTimeOffset>("CriadoEm")
-                        .HasColumnType("TEXT");
+                    b.Property<long>("CriadoEm")
+                        .HasColumnType("INTEGER");
 
                     b.Property<Guid>("IdEvento")
                         .HasColumnType("TEXT");
@@ -99,8 +99,8 @@ namespace Api.Migrations
                     b.Property<DateTime?>("CobrancaGeradaEm")
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTimeOffset>("CriadoEm")
-                        .HasColumnType("TEXT");
+                    b.Property<long>("CriadoEm")
+                        .HasColumnType("INTEGER");
 
                     b.Property<DateTime?>("DataConfirmacao")
                         .HasColumnType("TEXT");
@@ -170,11 +170,11 @@ namespace Api.Migrations
                     b.Property<Guid>("CompradorId")
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTimeOffset>("CriadoEm")
-                        .HasColumnType("TEXT");
+                    b.Property<long>("CriadoEm")
+                        .HasColumnType("INTEGER");
 
-                    b.Property<DateTime>("ExpiraEm")
-                        .HasColumnType("TEXT");
+                    b.Property<long>("ExpiraEm")
+                        .HasColumnType("INTEGER");
 
                     b.Property<Guid>("OfertaId")
                         .HasColumnType("TEXT");
@@ -198,6 +198,8 @@ namespace Api.Migrations
                     b.HasIndex("OfertaId");
 
                     b.HasIndex("Status");
+
+                    b.HasIndex("Status", "ExpiraEm");
 
                     b.ToTable("pedidos", null, t =>
                         {

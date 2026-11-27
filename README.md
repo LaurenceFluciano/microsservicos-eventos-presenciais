@@ -28,9 +28,13 @@ Os quatro microsserviços estão implantados no Render e podem ser explorados po
 | Comercialização | [Scalar](https://comercializacao.onrender.com/scalar/) | [JSON](https://comercializacao.onrender.com/openapi/v1.json) |
 | Portaria | [Scalar](https://portaria-gdve.onrender.com/scalar/) | [JSON](https://portaria-gdve.onrender.com/openapi/v1.json) |
 
-As informações de acesso destinadas à demonstração acadêmica são disponibilizadas na release correspondente.
+As informações de acesso destinadas à demonstração acadêmica estão disponíveis em [Release](Docs/Release.md).
+
+Para mais informações, consulte [Implantação](Docs/Implantacao.md).
 
 **Atenção:** o ambiente destina-se exclusivamente à demonstração e aos testes. Não utilize dados pessoais ou meios de pagamento reais.
+
+**Ambientes Temporários**: Quando os microsserviços desligarem (devido à suspensão por inatividade do Render), todos os dados cadastrados serão apagados. Cuidado, se um microsserviço cair, pode ser que prejudique as requisições e crie estados inconsistentes entre as APIs. Recomenda-se iniciar todos juntos e testá-los.
 
 ## Problema e objetivo
 
@@ -63,7 +67,7 @@ Os problemas apresentados correspondem à análise inicial do domínio e não fo
 | Comercialização | Gerenciamento de ofertas, controle de disponibilidade, criação e cancelamento de pedidos elegíveis, processamento de pagamentos, emissão de ingressos e QR Codes. |
 | Portaria | Geração de credenciais de acesso, validação de ingressos e registro de entrada. |
 
-O catálogo de funcionalidades e suas respectivas restrições encontra-se nos documentos de Requisitos de Software e Regras de Negócio.
+O catálogo de funcionalidades e suas respectivas restrições encontra-se nos documentos [Requisitos de Software](Docs/RequisitosSoftware.md) e [Regras de Negócio](Docs/RegrasNegocio.md).
 
 ### Fluxo principal
 
@@ -158,6 +162,8 @@ Internamente, os serviços são organizados em controllers, serviços, entidades
 
 O projeto não representa uma implementação integral de arquitetura hexagonal.
 
+Para mais informações, consulte [Arquitetura](Docs/Arquitetura.md) e [Modelagem](Docs/Modelagem.md).
+
 ## Integrações
 
 O trabalho acadêmico exige pelo menos duas consultas entre microsserviços e uma alteração de dados solicitada por outro serviço.
@@ -207,14 +213,15 @@ O acesso ao painel é restrito aos integrantes autorizados da equipe, sem necess
 
 | Documento | Conteúdo |
 |---|---|
-| Requisitos de Software | Atores e requisitos funcionais organizados por domínio. |
-| Regras de Negócio | Condições, restrições e invariantes do domínio. |
-| Arquitetura | Estrutura, integrações, segurança e decisões arquiteturais. |
-| Modelagem | Entidades e relacionamentos internos. |
-| Pré-requisitos | Dependências e preparação do ambiente. |
-| Configurações | Referência das propriedades de configuração. |
-| Configuração local | Procedimentos de execução dos microsserviços. |
-| Implantação | Infraestrutura remota e procedimentos de implantação. |
+| [Requisitos de Software](Docs/RequisitosSoftware.md) | Atores e requisitos funcionais organizados por domínio. |
+| [Regras de Negócio](Docs/RegrasNegocio.md) | Condições, restrições e invariantes do domínio. |
+| [Arquitetura](Docs/Arquitetura.md) | Estrutura, integrações, segurança e decisões arquiteturais. |
+| [Modelagem](Docs/Modelagem.md) | Entidades e relacionamentos internos. |
+| [Pré-requisitos](Docs/PreRequisitos.md) | Dependências e preparação do ambiente. |
+| [Configurações](Docs/Configuracoes.md) | Referência das propriedades de configuração. |
+| [Configuração local](Docs/ConfiguracaoLocal/) | Procedimentos de execução dos microsserviços. |
+| [Implantação](Docs/Implantacao.md) | Infraestrutura remota e procedimentos de implantação. |
+| [Release](Docs/Release.md) | Informações de acesso e disponibilização da versão acadêmica. |
 | OpenAPI / Scalar | Contratos técnicos e exploração das APIs REST. |
 
 Os requisitos funcionais e as regras de negócio possuem identificadores únicos utilizados para rastreabilidade com as operações das APIs.
@@ -252,7 +259,7 @@ Os requisitos funcionais e as regras de negócio possuem identificadores únicos
 - Credenciais de teste da Stripe.
 - Stripe CLI.
 
-Consulte a documentação de Pré-requisitos para preparar as dependências e gerar o par de chaves RSA.
+Consulte [Pré-requisitos](Docs/PreRequisitos.md) para preparar as dependências e gerar o par de chaves RSA.
 
 ### 2. Clone o repositório
 
@@ -267,12 +274,14 @@ Siga os respectivos guias de configuração local.
 
 Os arquivos `appsettings.Development.json` contêm as configurações de desenvolvimento, enquanto informações sensíveis são definidas por meio de .NET User Secrets.
 
-| Microsserviço | Endereço local |
-|---|---|
-| Usuários | http://localhost:5296 |
-| Eventos | http://localhost:5297 |
-| Comercialização | http://localhost:5298 |
-| Portaria | http://localhost:5299 |
+| Microsserviço | Guia de configuração | Endereço local |
+|---|---|---|
+| Usuários | [Configuração de Usuários](Docs/ConfiguracaoLocal/Usuario.md) | http://localhost:5296 |
+| Eventos | [Configuração de Eventos](Docs/ConfiguracaoLocal/Eventos.md) | http://localhost:5297 |
+| Comercialização | [Configuração de Comercialização](Docs/ConfiguracaoLocal/Comercializacao.md) | http://localhost:5298 |
+| Portaria | [Configuração de Portaria](Docs/ConfiguracaoLocal/Portaria.md) | http://localhost:5299 |
+
+Para consultar as propriedades utilizadas pelos microsserviços, acesse [Configurações](Docs/Configuracoes.md).
 
 ### 4. Inicie o RabbitMQ
 
@@ -304,7 +313,7 @@ dotnet run
 stripe listen --forward-to http://localhost:5298/api/webhooks/pagamentos
 ```
 
-Configure o segredo de assinatura conforme o guia de Comercialização.
+Configure o segredo de assinatura conforme o guia de [Configuração de Comercialização](Docs/ConfiguracaoLocal/Comercializacao.md).
 
 ### 7. Explore as APIs
 

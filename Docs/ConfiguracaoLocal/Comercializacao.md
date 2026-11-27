@@ -472,25 +472,27 @@ Quando um pagamento foi concluído, mas seu webhook local falhou, não crie outr
 
 Para validar a integração, execute o seguinte fluxo:
 
-1. Inicie Usuários, Eventos e Comercialização.
+1. Inicie o RabbitMQ.
 
-2. Inicie Portaria, caso deseje validar também a emissão de credenciais.
+2. Inicie Usuários, Portaria, Comercialização e Eventos, respectivamente.
 
-3. Execute o listener do Stripe CLI.
+3. Inicie Portaria, caso deseje validar também a emissão de credenciais.
 
-4. Crie um evento e uma oferta de ingresso ativa.
+4. Execute o listener do Stripe CLI.
 
-5. Publique o evento.
+5. Crie um evento e uma oferta de ingresso ativa.
 
-6. Cadastre um comprador em Usuários, caso ainda não exista, e crie um pedido em Comercialização informando o e-mail do comprador, a oferta de ingresso e a quantidade desejada.
+6. Publique o evento.
 
-7. Consulte o pedido e obtenha a URL de Checkout.
+7. Cadastre um comprador em Usuários, caso ainda não exista, e crie um pedido em Comercialização informando o e-mail do comprador, a oferta de ingresso e a quantidade desejada.
 
-8. Abra a URL de Checkout no navegador.
+8. Consulte o pedido e obtenha a URL de Checkout.
 
-9. Realize um pagamento utilizando os dados de teste fornecidos pela Stripe.
+9. Abra a URL de Checkout no navegador.
 
-10. Observe o webhook e verifique o processamento do pedido.
+10. Realize um pagamento utilizando os dados de teste fornecidos pela Stripe.
+
+11. Observe o webhook e verifique o processamento do pedido.
 
 Exemplo de corpo da requisição para criação de um pedido:
 

@@ -4,154 +4,91 @@
 
 Este documento apresenta os requisitos funcionais do sistema de gerenciamento de eventos presenciais e comercialização de ingressos digitais.
 
-O projeto foi desenvolvido com o objetivo de estudar a arquitetura de microsserviços, utilizando serviços independentes que se comunicam por meio de APIs REST.
+Os requisitos estão organizados por domínio de negócio e descrevem os comportamentos oferecidos pelo sistema aos seus atores e aos processos automatizados.
 
-A documentação está organizada em requisitos funcionais identificados de RF-01 a RF-24, agrupados por domínio de negócio.
+Cada requisito funcional possui um identificador único, utilizado para estabelecer a rastreabilidade entre as funcionalidades, as regras de negócio e as operações disponibilizadas pelas APIs REST dos microsserviços.
 
-As regras de negócio associadas serão documentadas separadamente em [Regras de Negócio](RegrasNegocio.md).
+As condições e restrições aplicadas à execução dos requisitos funcionais são descritas no documento [Regras de Negócio](RegrasNegocio.md).
 
-## 2. Propósito do sistema
-
-O sistema tem como propósito permitir que pequenos organizadores de eventos presenciais publiquem seus eventos, disponibilizem ingressos para compra, acompanhem pedidos e pagamentos e realizem o controle de acesso dos participantes.
-
-A solução busca reduzir a dependência de procedimentos manuais, especialmente nas etapas de comercialização, emissão de ingressos e conferência de entrada.
-
-O projeto contempla o fluxo essencial de gerenciamento de eventos e comercialização de ingressos digitais, sem pretender substituir integralmente plataformas comerciais especializadas.
-
-## 3. Problema identificado
-
-A comercialização manual de ingressos pode envolver atendimento individual, confirmação de pagamentos, emissão de comprovantes e conferência presencial de participantes.
-
-Esses procedimentos podem apresentar dificuldades como:
-
-- Demora no atendimento e na conclusão das compras.
-- Dificuldade para acompanhar pagamentos e pedidos.
-- Falta de atualização automática da disponibilidade de ingressos.
-- Risco de utilização repetida de um mesmo ingresso.
-- Dificuldade para recuperar ingressos e consultar compras anteriores.
-- Informações dos eventos distribuídas entre diferentes canais de comunicação.
-
-A aplicação propõe centralizar e automatizar parte desses processos, utilizando APIs independentes para cada domínio.
-
-Os problemas apresentados correspondem à análise inicial do domínio e não representam, por si só, resultados de pesquisa de mercado.
-
-## 4. Público-alvo e atores
-
-O público-alvo inicial é composto por pequenos organizadores de eventos presenciais, como apresentações musicais, palestras, espetáculos teatrais e encontros culturais.
-
-Os principais atores identificados são:
+## 2. Atores do sistema
 
 | Ator | Descrição |
 |---|---|
-| Visitante | Pessoa que consulta eventos e ofertas sem necessariamente possuir uma conta de acesso. |
-| Comprador | Pessoa que realiza pedidos, acompanha pagamentos e utiliza ingressos adquiridos. |
-| Organizador | Usuário autenticado responsável por cadastrar, validar ingressos, publicar e administrar seus eventos e ofertas. |
-| Sistema | Representa os processos automatizados, como confirmação de pagamentos, emissão de ingressos e atualização de estados. |
+| Visitante | Pessoa que consulta eventos publicados e ofertas de ingressos, sem necessariamente possuir uma conta de acesso. |
+| Comprador | Pessoa cadastrada que realiza pedidos de compra, acompanha pagamentos e consulta os ingressos adquiridos, independentemente de possuir uma conta de acesso. |
+| Organizador | Usuário autenticado responsável pelo cadastro, atualização, publicação e gerenciamento de seus eventos e ofertas de ingressos, bem como pela validação das entradas. |
+| Sistema | Representa os processos automatizados, incluindo atualização de estados, processamento de pagamentos, emissão de ingressos e geração de credenciais de acesso. |
 
-Um mesmo usuário autenticado pode desempenhar diferentes papéis conforme a operação realizada.
+Um mesmo usuário pode desempenhar diferentes papéis conforme a operação realizada.
 
-Nesse escopo foi definido que o organizador quem valida a entrada do ingresso, no futuro pode ter funcionalidades em que o organizador permita adicionar colaboradores e máquinas que escaneia o ingresso que também desempenha a função de validar o ingresso.
+Todo usuário que possui uma conta de acesso pode atuar como organizador de eventos, sem necessidade de cadastro adicional.
 
-## 5. Requisitos funcionais
+## 3. Requisitos funcionais
 
-Os requisitos funcionais estão agrupados conforme os quatro domínios principais: Gestão de Eventos, Gestão de Usuários, Comercialização e Portaria.
-
-### 5.1. Gestão de Eventos
+### 3.1. Gestão de Eventos
 
 | Código | Requisito funcional |
 |---|---|
-| RF-01 | O sistema deve permitir que o organizador cadastre eventos, informando nome, descrição, local, data e horário. |
-| RF-02 | O sistema deve permitir que o organizador atualize as informações de seus eventos. |
-| RF-03 | O sistema deve permitir que o organizador publique eventos previamente cadastrados, tornando-os acessíveis ao público por meio de um endereço eletrônico próprio e disponibilizando suas ofertas de ingressos para comercialização. |
-| RF-04 | O sistema deve disponibilizar ao organizador um endereço eletrônico (URL) para o compartilhamento de cada evento publicado. |
+| RF-01 | O sistema deve permitir que o organizador cadastre eventos, informando nome, descrição, local, data e horário de início e término. |
+| RF-02 | O sistema deve permitir que o organizador atualize as informações dos eventos sob sua responsabilidade. |
+| RF-03 | O sistema deve permitir que o organizador publique eventos previamente cadastrados, tornando suas informações e ofertas de ingressos disponíveis para consulta pública. |
+| RF-04 | O sistema deve disponibilizar ao organizador um endereço eletrônico próprio para o compartilhamento de cada evento publicado. |
 | RF-16 | O sistema deve permitir que usuários autenticados atuem como organizadores de eventos, sem necessidade de cadastro adicional. |
-| RF-21 | O sistema deve permitir que organizadores consultem seus próprios eventos filtrando por data agendada e estado de publicação. |
-| RF-23 | O sistema deve permitir que visitantes e compradores consultem as informações de um evento publicado através de seu endereço eletrônico. |
+| RF-21 | O sistema deve permitir que organizadores consultem individualmente seus eventos e obtenham uma listagem ordenada por data agendada, com possibilidade de filtragem pelo estado de publicação. |
+| RF-23 | O sistema deve permitir que visitantes e compradores consultem a listagem de eventos publicados e obtenham suas informações por meio de um identificador ou endereço eletrônico público. |
 
-### 5.2. Gestão de Usuários
-
-| Código | Requisito funcional |
-|---|---|
-| RF-13 | O sistema deve permitir que pessoas criem uma conta de acesso, verificando seu e-mail e definindo uma senha. |
-| RF-14 | O sistema deve permitir que usuários com conta realizem autenticação. |
-| RF-15 | O sistema deve permitir que usuários autenticados consultem e atualizem seus dados cadastrais. |
-| RF-22 | O sistema deve permitir que seja cadastrado um usuário sem uma conta de acesso. |
-
-### 5.3. Comercialização
+### 3.2. Gestão de Usuários
 
 | Código | Requisito funcional |
 |---|---|
-| RF-05 | O sistema deve permitir que o organizador configure ofertas de ingressos para seus eventos, definindo o nome da oferta, o preço unitário e a quantidade total de ingressos disponibilizados para comercialização. |
-| RF-06 | O sistema deve permitir que visitantes e compradores consultem as ofertas de ingressos disponíveis para eventos publicados, incluindo preço e quantidade disponível. |
-| RF-07 | O sistema deve permitir que o comprador realize pedidos de compra de ingressos. |
-| RF-08 | O sistema deve registrar e acompanhar a situação do pagamento de cada pedido. |
-| RF-09 | O sistema deve emitir os ingressos correspondentes após a confirmação do pagamento. |
-| RF-10 | O sistema deve permitir que o comprador consulte seus pedidos e ingressos adquiridos. |
-| RF-11 | O sistema deve permitir o cancelamento de pedidos elegíveis, conforme as regras de cancelamento estabelecidas. |
-| RF-12 | O sistema deve permitir que visitantes realizem compras de ingressos sem a necessidade de criar uma conta de acesso. |
-| RF-24 | O sistema deve permitir que o organizador atualize o nome, o preço unitário e a quantidade total de ingressos de ofertas associadas aos eventos sob sua responsabilidade. |
+| RF-13 | O sistema deve permitir que pessoas criem uma conta de acesso mediante cadastro de seus dados, definição de senha e verificação da titularidade do endereço de e-mail. |
+| RF-14 | O sistema deve permitir que usuários com uma conta de acesso realizem autenticação. |
+| RF-15 | O sistema deve permitir que usuários autenticados consultem seus próprios dados cadastrais e atualizem seu nome e telefone. |
+| RF-22 | O sistema deve permitir o cadastro de usuários sem a criação de uma conta de acesso. |
 
-### 5.4. Portaria
+### 3.3. Comercialização
 
 | Código | Requisito funcional |
 |---|---|
-| RF-17 | O sistema deve gerar uma credencial de acesso única para cada ingresso emitido após a confirmação do pagamento. |
-| RF-18 | O sistema deve permitir que o organizador valide ingressos por meio da leitura do QR Code do ingresso digital. |
-| RF-19 | O sistema deve registrar a utilização de um ingresso após a autorização de entrada, impedindo sua reutilização. |
-| RF-20 | O sistema deve bloquear as credenciais de acesso associadas a ingressos cancelados. |
+| RF-05 | O sistema deve permitir que o organizador configure e consulte as ofertas de ingressos associadas aos eventos sob sua responsabilidade, definindo nome, preço unitário e quantidade total disponibilizada para comercialização. |
+| RF-06 | O sistema deve permitir que visitantes e compradores consultem as ofertas de ingressos de eventos publicados, incluindo preço e quantidade disponível. |
+| RF-07 | O sistema deve permitir que compradores realizem pedidos de ingressos, selecionando uma oferta e informando a quantidade desejada, reservando os ingressos correspondentes durante o prazo de pagamento. |
+| RF-08 | O sistema deve permitir o processamento de pagamentos dos pedidos, disponibilizando os meios necessários para sua realização e registrando as alterações de situação comunicadas pelo provedor de pagamentos. |
+| RF-09 | O sistema deve emitir os ingressos correspondentes aos pedidos após a confirmação do pagamento ou, no caso de pedidos gratuitos, após a confirmação de sua elegibilidade para emissão. |
+| RF-10 | O sistema deve permitir a consulta individual de pedidos e ingressos adquiridos, incluindo suas informações e o QR Code associado ao ingresso digital. |
+| RF-11 | O sistema deve permitir o cancelamento de pedidos elegíveis, liberando os ingressos reservados e invalidando as cobranças associadas conforme as regras de negócio. |
+| RF-12 | O sistema deve permitir que visitantes realizem pedidos de ingressos sem a necessidade de criar uma conta de acesso, mediante identificação de um cadastro de usuário pelo endereço de e-mail. |
+| RF-24 | O sistema deve permitir que o organizador atualize o nome, o preço unitário e a quantidade total de ingressos das ofertas associadas aos eventos sob sua responsabilidade. |
 
-## 6. Visão geral dos microsserviços
+### 3.4. Portaria
 
-O sistema é dividido em quatro microsserviços independentes.
-
-| Microsserviço | Responsabilidade |
+| Código | Requisito funcional |
 |---|---|
-| Usuários | Cadastro de usuários, gerenciamento de contas e autenticação. |
-| Eventos | Cadastro, atualização, publicação e consulta de eventos. |
-| Comercialização | Gerenciamento de ofertas, pedidos, pagamentos e emissão de ingressos. |
-| Portaria | Gerenciamento de credenciais de acesso e validação de entradas. |
+| RF-17 | O sistema deve gerar uma credencial de acesso única para cada ingresso emitido a partir de um pedido confirmado, independentemente de sua natureza gratuita ou paga. |
+| RF-18 | O sistema deve permitir que o organizador valide ingressos digitais mediante o código de acesso representado pelo QR Code do ingresso. |
+| RF-19 | O sistema deve registrar a utilização da credencial de acesso após a autorização de entrada, impedindo sua reutilização. |
 
-Cada microsserviço possui seu próprio domínio e armazenamento de dados.
+## 4. Organização dos requisitos por domínio
 
-A descrição das integrações e das responsabilidades técnicas encontra-se em [Arquitetura](Arquitetura.md).
+| Domínio | Microsserviço responsável | Requisitos funcionais |
+|---|---|---|
+| Gestão de Eventos | Eventos | RF-01, RF-02, RF-03, RF-04, RF-16, RF-21, RF-23 |
+| Gestão de Usuários | Usuários | RF-13, RF-14, RF-15, RF-22 |
+| Comercialização | Comercialização | RF-05, RF-06, RF-07, RF-08, RF-09, RF-10, RF-11, RF-12, RF-24 |
+| Portaria | Portaria | RF-17, RF-18, RF-19 |
 
-## 7. Escopo do projeto
+A atribuição de um requisito a determinado microsserviço representa sua responsabilidade principal sobre a funcionalidade.
 
-O escopo inicial compreende o fluxo essencial de comercialização e utilização de ingressos digitais.
+A execução de um requisito pode envolver a participação de outros microsserviços por meio de consultas, solicitações de alteração de dados e notificações assíncronas.
 
-O processo esperado envolve:
+## 5. Rastreabilidade
 
-1. Cadastro ou identificação de um organizador.
-2. Cadastro de um evento.
-3. Configuração das ofertas de ingressos.
-4. Publicação do evento.
-5. Consulta pública dos eventos e das ofertas disponíveis.
-6. Criação de um pedido de compra.
-7. Processamento e confirmação do pagamento.
-8. Emissão dos ingressos digitais.
-9. Geração das credenciais de acesso.
-10. Validação dos ingressos na entrada do evento.
+Os identificadores dos requisitos funcionais são utilizados para estabelecer relações entre:
 
-O desenvolvimento prioriza a aplicação dos conceitos de arquitetura de microsserviços, separação de responsabilidades, comunicação HTTP e consistência das regras de negócio.
+- Requisitos funcionais.
+- Regras de negócio.
+- Operações das APIs REST.
+- Integrações entre microsserviços.
+- Casos de teste.
 
-Funcionalidades avançadas de gestão de eventos, logística e operação comercial não fazem parte do foco principal desta versão.
-
-## 8. Rastreabilidade e implementação
-
-Cada requisito funcional possui um identificador único, preservado ao longo da documentação.
-
-As regras de negócio relacionadas serão descritas no documento `RegrasNegocio.md`, com referências aos requisitos correspondentes.
-
-A presença de um requisito neste documento não significa, necessariamente, que sua implementação esteja concluída.
-
-O atendimento dos requisitos deve ser verificado por meio da análise do código, dos testes automatizados e dos fluxos efetivamente executados.
-
-## 9. Documentação complementar
-
-- [Regras de Negócio](RegrasNegocio.md) — condições e restrições aplicadas ao domínio.
-- [Arquitetura](Arquitetura.md) — estrutura dos microsserviços e suas integrações.
-- [Pré-requisitos](PreRequisitos.md) — dependências e preparação do ambiente.
-- [Configurações](Configuracoes.md) — referência das configurações utilizadas pelos serviços.
-- [Configuração local](ConfiguracaoLocal/) — procedimentos de execução em desenvolvimento.
-
-Este documento deve ser atualizado quando novos requisitos forem identificados ou quando o escopo funcional do sistema for alterado.
+A identificação dos requisitos é independente de sua posição neste documento, permitindo sua organização por domínio sem alterar as referências utilizadas na documentação do sistema.

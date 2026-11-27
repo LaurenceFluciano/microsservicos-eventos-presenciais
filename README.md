@@ -223,6 +223,7 @@ O acesso ao painel é restrito aos integrantes autorizados da equipe, sem necess
 | [Implantação](Docs/Implantacao.md) | Infraestrutura remota e procedimentos de implantação. |
 | [Release](Docs/Release.md) | Informações de acesso e disponibilização da versão acadêmica. |
 | OpenAPI / Scalar | Contratos técnicos e exploração das APIs REST. |
+| [APIs REST](Docs/ApiRest.md) | Catálogo de operações HTTP, contratos de integração e rastreabilidade com os requisitos funcionais e regras de negócio. |
 
 Os requisitos funcionais e as regras de negócio possuem identificadores únicos utilizados para rastreabilidade com as operações das APIs.
 

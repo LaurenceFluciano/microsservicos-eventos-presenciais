@@ -90,6 +90,7 @@ public sealed class UsuarioController : ControllerBase
         }
     }
 
+    [InternalApi]
     [HttpPost]
     public async Task<IActionResult> Criar(
         [FromBody] UsuarioInputDTO dto)

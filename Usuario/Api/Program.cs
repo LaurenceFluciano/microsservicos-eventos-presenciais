@@ -55,7 +55,18 @@ builder.Services.AddSingleton<ITokenJwtService>(
 // E-mail
 // =====================================================
 
-builder.Services.AddSingleton<IEmailSender, FakeEmailSender>();
+builder.Services.AddHttpClient<BrevoEmailSender>();
+
+if (builder.Environment.IsDevelopment() &&
+    string.IsNullOrWhiteSpace(builder.Configuration["Brevo:ApiKey"]))
+{
+    builder.Services.AddSingleton<IEmailSender, FakeEmailSender>();
+}
+else
+{
+    builder.Services.AddTransient<IEmailSender>(serviceProvider =>
+        serviceProvider.GetRequiredService<BrevoEmailSender>());
+}
 
 
 // =====================================================
@@ -205,4 +216,6 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+public partial class Program { }
 

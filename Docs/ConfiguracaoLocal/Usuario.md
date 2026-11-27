@@ -61,6 +61,37 @@ As duas chaves devem pertencer ao mesmo par RSA.
 
 Caso a implementação de `TokenJwtService` utilize ambas as propriedades, mantenha as duas configuradas.
 
+### 2.4. Configurar envio de e-mail pela Brevo
+
+Crie uma conta Brevo, gere uma chave de API e cadastre/verifique o remetente no painel. Para usar um remetente `no-reply`, ele precisa pertencer a um domínio que você controla e que esteja verificado na Brevo; configure também SPF/DKIM conforme as instruções do provedor. O destinatário ainda verá o endereço `no-reply`; esse nome indica que respostas não são monitoradas, não que o remetente fica oculto.
+
+Configure os valores localmente sem adicioná-los ao Git:
+
+```bash
+dotnet user-secrets set "Brevo:ApiKey" "SUA_CHAVE_API_BREVO"
+dotnet user-secrets set "Brevo:SenderEmail" "no-reply@seu-dominio-verificado.com"
+dotnet user-secrets set "Brevo:SenderName" "Eventos Presenciais"
+```
+
+Opcionalmente, configure a página do seu frontend que receberá o token e chamará `POST /api/auth/verify-email`:
+
+```bash
+dotnet user-secrets set "Brevo:VerificationUrl" "https://seu-site.com/confirmar-email"
+```
+
+Se `Brevo:VerificationUrl` não for configurada, a mensagem ainda incluirá o código de confirmação para uso com a API. Em desenvolvimento, sem `Brevo:ApiKey`, a aplicação mantém o remetente Fake; em produção, o envio usa a API HTTPS da Brevo, sem SMTP.
+
+No Render, defina as mesmas configurações como variáveis de ambiente:
+
+| Variável | Valor |
+|---|---|
+| `Brevo__ApiKey` | Chave secreta da API Brevo |
+| `Brevo__SenderEmail` | Remetente verificado, por exemplo `no-reply@seu-dominio.com` |
+| `Brevo__SenderName` | `Eventos Presenciais` |
+| `Brevo__VerificationUrl` | URL absoluta HTTPS da página de confirmação, se houver frontend |
+
+Não coloque a chave da Brevo em `appsettings.json`, no Dockerfile ou no Git.
+
 ## 3. Verificar as configurações locais
 
 Execute:
@@ -74,6 +105,10 @@ As propriedades esperadas são:
 | Configuração | Finalidade |
 |---|---|
 | `Authentication:ApiKey` | Autenticação das chamadas internas |
+| `Brevo:ApiKey` | Chave sensível para envio transacional pela Brevo |
+| `Brevo:SenderEmail` | Endereço de remetente verificado na Brevo |
+| `Brevo:SenderName` | Nome exibido para quem recebe o e-mail |
+| `Brevo:VerificationUrl` | URL opcional do frontend que recebe o token |
 | `Jwt:PrivateKeyPem` | Assinatura dos tokens JWT |
 | `Jwt:PublicKeyPem` | Disponibilização ou utilização da chave pública RSA |
 
@@ -181,6 +216,10 @@ Para investigar falhas, consulte os logs da aplicação no terminal.
 | `Jwt:PrivateKeyPem` | User Secrets |
 | `Jwt:PublicKeyPem` | User Secrets |
 | `Authentication:ApiKey` | User Secrets |
+| `Brevo:ApiKey` | User Secrets em desenvolvimento; variável de ambiente no Render |
+| `Brevo:SenderEmail` | User Secrets em desenvolvimento; variável de ambiente no Render |
+| `Brevo:SenderName` | User Secrets ou variável de ambiente |
+| `Brevo:VerificationUrl` | User Secrets ou variável de ambiente, se houver frontend |
 | `ConnectionStrings:DefaultConnection` | `appsettings.Development.json` |
 | `Cors:AllowedOrigins` | `appsettings.Development.json` |
 

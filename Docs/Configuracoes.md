@@ -12,14 +12,20 @@ A classificação sensível indica que o valor deve ser protegido. A obrigatorie
 
 | Configuração | Finalidade | Sensível |
 |---|---|---|
-| `Jwt:Issuer` | Emissor do JWT | Não |
-| `Jwt:Audience` | Audiência do JWT | Não |
-| `Jwt:AccessTokenMinutes` | Duração dos tokens | Não |
-| `Jwt:PublicKeyPem` | Chave pública, se exigida pela implementação | Não |
-| `Jwt:PrivateKeyPem` | Assinatura RSA dos tokens | **Sim** |
-| `ConnectionStrings:DefaultConnection` | Banco SQLite | Depende do conteúdo |
-| `Cors:AllowedOrigins` | Origens autorizadas | Não |
-| `Authentication:ApiKey` | Autenticação interna, inclusive consulta por e-mail | **Sim** |
+| `Jwt:Issuer` | Identificador do emissor dos JWTs | Não |
+| `Jwt:Audience` | Identificador dos destinatários previstos dos JWTs | Não |
+| `Jwt:AccessTokenMinutes` | Tempo de validade dos tokens de acesso emitidos | Não |
+| `Jwt:PublicKeyPem` | Chave RSA pública para validação de assinaturas JWT | Não |
+| `Jwt:PrivateKeyPem` | Chave RSA privada utilizada na assinatura dos tokens | **Sim** |
+| `ConnectionStrings:DefaultConnection` | Conexão com o banco SQLite | Depende do conteúdo |
+| `Cors:AllowedOrigins` | Origens permitidas para chamadas de navegadores | Não |
+| `Authentication:ApiKey` | Autenticação das requisições internas, incluindo consultas de compradores por e-mail | **Sim** |
+| `Brevo:ApiKey` | Chave para envio de e-mails transacionais pela API HTTPS da Brevo | **Sim** |
+| `Brevo:SenderEmail` | Endereço de remetente verificado na Brevo, por exemplo `no-reply@seu-dominio.com` | Não |
+| `Brevo:SenderName` | Nome apresentado no remetente dos e-mails | Não |
+| `Brevo:VerificationUrl` | URL opcional do frontend para confirmar e-mail com o token | Não |
+
+**Observação:** os nomes `Jwt:PrivateKeyPem` e `ConnectionStrings:DefaultConnection` devem ser conferidos no código do microsserviço Usuários. Esta seção descreve as configurações esperadas pela arquitetura, mas não constitui um inventário definitivo daquele projeto.
 
 A chave privada permanece restrita ao emissor. Confirmar o uso efetivo da chave pública no serviço. O envio de e-mail utiliza FakeEmailSender; Brevo ainda é uma evolução proposta, não configuração obrigatória atual.
 

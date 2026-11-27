@@ -13,13 +13,16 @@ public sealed class BrevoEmailSender : IEmailSender
     private readonly string _senderName;
     private readonly string? _verificationUrl;
 
-    public BrevoEmailSender(HttpClient httpClient, IConfiguration configuration)
+    private readonly ILogger<FakeEmailSender> _logger;
+
+    public BrevoEmailSender(HttpClient httpClient, IConfiguration configuration, ILogger<FakeEmailSender> logger)
     {
         _httpClient = httpClient;
         _apiKey = configuration["Brevo:ApiKey"];
         _senderEmail = configuration["Brevo:SenderEmail"];
         _senderName = configuration["Brevo:SenderName"] ?? "Eventos Presenciais";
         _verificationUrl = configuration["Brevo:VerificationUrl"];
+        _logger = logger;
     }
 
     public bool IsConfigured =>
@@ -57,6 +60,12 @@ public sealed class BrevoEmailSender : IEmailSender
             Content = JsonContent.Create(message)
         };
         request.Headers.TryAddWithoutValidation("api-key", _apiKey);
+
+        _logger.LogWarning(
+            "Fake e-mail de confirmação para {Email}. Token de desenvolvimento: {Token}",
+            email,
+            token);
+
 
         using var response = await _httpClient.SendAsync(request, cancellationToken);
         if (!response.IsSuccessStatusCode)

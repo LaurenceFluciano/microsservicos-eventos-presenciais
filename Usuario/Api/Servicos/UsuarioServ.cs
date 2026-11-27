@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.Text.Json;
-using AppTemplate;
+using Api;
 using Microsoft.EntityFrameworkCore;
 using Usuario.DTO;
 using Usuario.Models;
@@ -147,6 +147,26 @@ namespace Usuario.Servicos
                 Telefone = usuario.Telefone,
                 CriadoEm = usuario.CriadoEm
             };
+        }
+
+
+        public async Task<UsuarioOutputDTO?> ObterPorEmail(
+            string email,
+            CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+                throw new ValidationException("O e-mail é obrigatório.");
+
+            var emailNormalizado = email.Trim().ToLowerInvariant();
+
+            var usuario = await _dataContext.Usuarios
+                .AsNoTracking()
+                .FirstOrDefaultAsync(
+                    u => u.Email == emailNormalizado,
+                    cancellationToken
+                );
+
+            return usuario is null ? null : Mapear(usuario);
         }
     }
 }

@@ -1,3 +1,4 @@
+
 using System.Net;
 using System.Net.Http.Json;
 using Api.Application.DTO.Client;
@@ -6,7 +7,7 @@ using Api.Error;
 
 namespace Api.Infrastructure.Client;
 
-public class HttpEventoClient : IEventoClient
+public sealed class HttpEventoClient : IEventoClient
 {
     private readonly HttpClient _httpClient;
 
@@ -20,21 +21,24 @@ public class HttpEventoClient : IEventoClient
         CancellationToken cancellationToken = default)
     {
         using var response = await _httpClient.GetAsync(
-            $"/api/eventos/{idEvento}",
+            $"api/eventos/{idEvento}/integracao",
             cancellationToken
         );
 
         if (response.StatusCode == HttpStatusCode.NotFound)
-            throw new NotFoundException("Evento não encontrado.");
+        {
+            throw new NotFoundException(
+                "Evento não encontrado.");
+        }
 
         response.EnsureSuccessStatusCode();
 
-        return await response.Content
+        var evento = await response.Content
             .ReadFromJsonAsync<EventoClientResponse>(
                 cancellationToken: cancellationToken
-            )
-            ?? throw new InvalidOperationException(
-                "Resposta inválida do serviço de eventos."
             );
+
+        return evento ?? throw new InvalidOperationException(
+            "Resposta inválida do serviço de Eventos.");
     }
 }

@@ -30,10 +30,13 @@ namespace Api.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTime>("Fim")
+                    b.Property<DateTimeOffset>("Fim")
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTime>("Inicio")
+                    b.Property<DateTimeOffset>("Inicio")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTimeOffset?>("InicioProcessadoEm")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Local")
@@ -47,10 +50,10 @@ namespace Api.Migrations
                     b.Property<Guid>("OrganizadorId")
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTime?>("PublicacaoEncerradaEm")
+                    b.Property<DateTimeOffset?>("PublicacaoEncerradaEm")
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTime?>("PublicadoEm")
+                    b.Property<DateTimeOffset?>("PublicadoEm")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Slug")

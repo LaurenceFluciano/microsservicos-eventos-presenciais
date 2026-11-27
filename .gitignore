@@ -64,6 +64,8 @@ coverage/
 .env
 .env.*
 !.env.example
+*.pem
+.dev-helper
 
 # Configurações locais com segredos
 **/appsettings.Local.json

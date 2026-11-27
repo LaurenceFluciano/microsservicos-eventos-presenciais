@@ -20,8 +20,8 @@ public static class EventoMapper
         return new Evento(
             organizadorId,
             request.Nome,
-            request.Inicio.Value,
-            request.Fim.Value
+            HorarioBrasilia.ParaUtc(request.Inicio.Value),
+            HorarioBrasilia.ParaUtc(request.Fim.Value)
         )
         {
             Descricao = request.Descricao ?? string.Empty,
@@ -29,8 +29,10 @@ public static class EventoMapper
         };
     }
 
-    public static EventoResponse ToEventoResponse(Evento evento)
+    public static EventoResponse ToEventoResponse(Evento evento, string? publicBaseUrl = null)
     {
+        var caminhoPublico = $"/api/eventos/publicado/{Uri.EscapeDataString(evento.SlugPublico)}";
+
         return new EventoResponse
         {
             Id = evento.Id,
@@ -39,16 +41,37 @@ public static class EventoMapper
             Descricao = evento.Descricao,
             Local = evento.Local,
             Slug = evento.SlugPublico,
-            Inicio = evento.Inicio,
-            Fim = evento.Fim,
+            Inicio = HorarioBrasilia.ParaLocal(evento.Inicio),
+            Fim = HorarioBrasilia.ParaLocal(evento.Fim),
             StatusPublicacao = evento.GetStatusPublicacao(),
             Status = evento.GetStatus(),
             CriadoEm = evento.CriadoEm,
-            PublicadoEm = evento.PublicadoEm,
-            PublicacaoEncerradaEm = evento.PublicacaoEncerradaEm,
+            PublicadoEm = HorarioBrasilia.ParaLocal(evento.PublicadoEm),
             UrlEvento = evento.PublicadoEm.HasValue
-                ? $"http://localhost:8080/api/eventos/publicado/{evento.SlugPublico}"
+                ? string.IsNullOrWhiteSpace(publicBaseUrl)
+                    ? caminhoPublico
+                    : $"{publicBaseUrl.TrimEnd('/')}{caminhoPublico}"
                 : null
+        };
+    }
+
+    public static ResumoEventoResponse ToResumoResponse(
+        Evento evento,
+        string? publicBaseUrl = null)
+    {
+        var detalhe = ToEventoResponse(evento, publicBaseUrl);
+
+        return new ResumoEventoResponse
+        {
+            Id = detalhe.Id,
+            Nome = detalhe.Nome,
+            Local = detalhe.Local,
+            Slug = detalhe.Slug,
+            Inicio = detalhe.Inicio,
+            Fim = detalhe.Fim,
+            Status = detalhe.Status,
+            StatusPublicacao = detalhe.StatusPublicacao,
+            UrlEvento = detalhe.UrlEvento
         };
     }
 
@@ -65,15 +88,14 @@ public static class EventoMapper
             Local = evento.Local,
             Slug = evento.SlugPublico,
 
-            Inicio = evento.Inicio,
-            Fim = evento.Fim,
+            Inicio = HorarioBrasilia.ParaLocal(evento.Inicio),
+            Fim = HorarioBrasilia.ParaLocal(evento.Fim),
 
             StatusPublicacao = evento.GetStatusPublicacao(),
             Status = evento.GetStatus(),
 
-            CriadoEm = evento.CriadoEm,
-            PublicadoEm = evento.PublicadoEm,
-            PublicacaoEncerradaEm = evento.PublicacaoEncerradaEm
+            CriadoEm = HorarioBrasilia.ParaLocal(evento.CriadoEm),
+            PublicadoEm = HorarioBrasilia.ParaLocal(evento.PublicadoEm)
         };
     }
 }

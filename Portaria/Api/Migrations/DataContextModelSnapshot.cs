@@ -23,15 +23,10 @@ namespace Api.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("Codigo")
-                        .IsRequired()
-                        .HasMaxLength(100)
+                    b.Property<DateTime>("DataEmissao")
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTimeOffset>("DataEmissao")
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTimeOffset?>("DataUtilizacao")
+                    b.Property<DateTime?>("DataUtilizacao")
                         .HasColumnType("TEXT");
 
                     b.Property<Guid>("EventoId")
@@ -46,9 +41,6 @@ namespace Api.Migrations
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("Codigo")
-                        .IsUnique();
 
                     b.HasIndex("EventoId");
 

@@ -63,7 +63,7 @@ public class OfertaIngresso
         = new List<Pedido>();
 
     
-    // Construtores
+    #region Construtores
     private OfertaIngresso()
     {
         
@@ -87,6 +87,7 @@ public class OfertaIngresso
         CriadoEm = DateTimeOffset.UtcNow;
     }
 
+    #endregion
 
     public void Encerrar()
     {

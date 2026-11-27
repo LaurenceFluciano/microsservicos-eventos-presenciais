@@ -9,7 +9,7 @@ Back-end desenvolvido como projeto acadêmico para estudar arquitetura de micros
 - [Funcionalidades e escopo](#funcionalidades-e-escopo)
 - [Arquitetura](#arquitetura)
 - [Integrações](#integrações)
-- [Observabilidade](#observabilidade)
+- [Telemetria e centralização de logs](#telemetria-e-centralização-de-logs)
 - [Documentação](#documentação)
 - [Tecnologias](#tecnologias)
 - [Como executar localmente](#como-executar-localmente)
@@ -181,7 +181,7 @@ A integração com a Stripe utiliza sessões de Checkout e webhooks assinados. O
 
 O MediatR é utilizado para notificações internas em Comercialização.
 
-## Observabilidade
+## Telemetria e centralização de logs
 
 Os microsserviços implantados no Render utilizam o Better Stack para centralização e consulta de logs.
 
